@@ -319,17 +319,3 @@ footer {
     font-size: 12px;
   }
 }
-.mobile-divider{
-  display:none;
-}
-
-@media (max-width:600px){
-
-  .mobile-divider{
-    display:block;
-    width:100%;
-    border-top:3px dashed #d60000;
-    margin:6px 0;
-  }
-
-}
