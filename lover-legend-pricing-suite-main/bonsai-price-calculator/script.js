@@ -5,7 +5,7 @@ const livePriceEl = document.getElementById("livePrice");
 const sameRackPriceEl = document.getElementById("sameRackPrice");
 const pickupPriceEl = document.getElementById("pickupPrice");
 const minimumPriceEl = document.getElementById("minimumPrice");
-const tiktokPriceEl = document.getElementById("tiktokPrice");
+
 function cleanNumber(value) {
   return Number(String(value).replace(/[^0-9.]/g, "")) || 0;
 }
@@ -38,10 +38,9 @@ if (retail <= 500) {
 
 function calculate() {
   const retail = cleanNumber(retailInput.value);
-  const tiktokPrice = retail * 0.82;
   const livePrice = getLivePrice(retail);
 
-  const sameRackDiscount = livePrice >= 500 ? "-RM30.00" : "-";
+  const sameRackDiscount = livePrice >= 500 ? "-RM50.00" : "-";
 
   let pickupDiscount;
 
@@ -60,10 +59,9 @@ const minimumPrice =
     : roundToNearest50(livePrice * 0.85);
 
   livePriceEl.textContent = formatRM(livePrice);
-sameRackPriceEl.textContent = sameRackDiscount;
-pickupPriceEl.textContent = formatRM(pickupPrice);
-minimumPriceEl.textContent = formatRM(minimumPrice);
-tiktokPriceEl.textContent = "(" + formatRM(tiktokPrice) + ")";
+  sameRackPriceEl.textContent = sameRackDiscount;
+  pickupPriceEl.textContent = formatRM(pickupPrice);
+  minimumPriceEl.textContent = formatRM(minimumPrice);
 }
 
 retailInput.addEventListener("focus", function () {

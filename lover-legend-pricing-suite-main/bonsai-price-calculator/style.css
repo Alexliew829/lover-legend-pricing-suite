@@ -94,13 +94,7 @@ body {
   font-weight: 900;
   color: #1e5631;
 }
-.tiktok-price{
-  color:#B22222;
-  font-size:23px;
-  font-weight:900;
-  white-space:nowrap;
-  margin-right:8px;
-}
+
 input {
   flex: 1;
   height: 100%;
@@ -303,9 +297,7 @@ footer {
   .highlight strong {
     font-size: 25px;
   }
-.tiktok-price{
-  font-size:21px;
-}
+
  .sg-title {
   font-size: 18px;
 }
