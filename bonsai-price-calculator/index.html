@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ms"> 
+<html lang="ms">
 <head>
   <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0" />
 
 <title>Kalkulator Harga Bonsai | 盆景价格计算器</title>
-  <link rel="stylesheet" href="style.css?v=2.4" />
+  <link rel="stylesheet" href="style.css?v=2.2" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
 
@@ -32,14 +32,13 @@
     </header>
 
     <section class="input-section">
-      <div class="input-title">门市价格 / Harga Kedai / Harga Tiktok</div>
+      <div class="input-title">门市价格 / Harga Kedai</div>
 
       <div class="input-wrap">
-  <span class="rm-prefix">RM</span>
-  <input id="retailPrice" type="text" inputmode="decimal" value="0.00" autocomplete="off" />
-  <span id="tiktokPrice" class="tiktok-price">(RM0.00)</span>
-  <button id="clearBtn" type="button" aria-label="Clear price">×</button>
-</div>
+        <span class="rm-prefix">RM</span>
+        <input id="retailPrice" type="text" inputmode="decimal" value="0.00" autocomplete="off" />
+        <button id="clearBtn" type="button" aria-label="Clear price">×</button>
+      </div>
     </section>
 
     <section class="price-list">
@@ -48,31 +47,31 @@
           <span class="cn">直播售价</span>
           <span class="ms">Harga Live</span>
         </div>
-     <strong id="livePrice">RM0.00</strong>
+        <strong id="livePrice">RM0.00</strong>
       </div>
 
       <div class="price-row">
         <div class="label">
-          <span class="cn">西马同木架（2棵），每一棵折扣</span>
-          <span class="ms">2 Pokok (Rangka Sama), Setiap Pokok Discount</span>
+          <span class="cn">同木架（2棵），每一棵</span>
+          <span class="ms">2 Pokok (Rangka Sama), Setiap Pokok</span>
         </div>
         <strong id="sameRackPrice">-</strong>
       </div>
 
       <div class="price-row">
         <div class="label">
-          <span class="cn">东马运费（每一棵+）</span>
-          <span class="ms">Penghantaran Sabah, Sarawak & Labuan (1 Pokok+)</span>
+          <span class="cn">东马运费（每一棵）</span>
+          <span class="ms">Penghantaran Sabah, Sarawak & Labuan (1 Pokok)</span>
         </div>
         <strong>+RM300.00</strong>
       </div>
 
       <div class="price-row">
         <div class="label">
-          <span class="cn">东马同木架（2棵），运费共</span>
-          <span class="ms">2 Pokok (Rangka Sama), Jumlah Kos Penghantaran Sabah， Sarawa & Labuan</span>
+          <span class="cn">同木架（2棵），运费共</span>
+          <span class="ms">2 Pokok (Rangka Sama), Jumlah Kos Penghantaran</span>
         </div>
-        <strong>RM400.00</strong>
+        <strong>+RM400.00</strong>
       </div>
 
       <div class="price-row">
