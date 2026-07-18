@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<title>Kalkulator Harga Bonsai | 盆景价格计算器</title>
+  <link rel="stylesheet" href="style.css?v=2.2" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+
+  <meta name="theme-color" content="#1E5631" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Bonsai Harga" />
+</head>
+
+<body>
+  <main class="app">
+    <header class="header">
+      <img src="images/logo.png" class="logo" alt="Lover Legend Gardening Logo" onerror="this.style.display='none'" />
+
+      <div class="header-text">
+        <div class="title-cn">盆景价格计算器</div>
+        <div class="title-ms">Kalkulator Harga Bonsai</div>
+        <div class="company">Lover Legend Gardening</div>
+      </div>
+    </header>
+
+    <section class="input-section">
+      <div class="input-title">门市价格 / Harga Kedai</div>
+
+      <div class="input-wrap">
+        <span class="rm-prefix">RM</span>
+        <input id="retailPrice" type="text" inputmode="decimal" value="0.00" autocomplete="off" />
+        <button id="clearBtn" type="button" aria-label="Clear price">×</button>
+      </div>
+    </section>
+
+    <section class="price-list">
+      <div class="price-row highlight">
+        <div class="label">
+          <span class="cn">直播售价</span>
+          <span class="ms">Harga Live</span>
+        </div>
+        <strong id="livePrice">RM0.00</strong>
+      </div>
+
+      <div class="price-row">
+        <div class="label">
+          <span class="cn">同木架（2棵），每一棵</span>
+          <span class="ms">2 Pokok (Rangka Sama), Setiap Pokok</span>
+        </div>
+        <strong id="sameRackPrice">-</strong>
+      </div>
+
+      <div class="price-row">
+        <div class="label">
+          <span class="cn">东马运费（每一棵）</span>
+          <span class="ms">Penghantaran Sabah, Sarawak & Labuan (1 Pokok)</span>
+        </div>
+        <strong>+RM300.00</strong>
+      </div>
+
+      <div class="price-row">
+        <div class="label">
+          <span class="cn">同木架（2棵），运费共</span>
+          <span class="ms">2 Pokok (Rangka Sama), Jumlah Kos Penghantaran</span>
+        </div>
+        <strong>+RM400.00</strong>
+      </div>
+
+      <div class="price-row">
+        <div class="label">
+          <span class="cn">花圃自取</span>
+          <span class="ms">Ambil Sendiri di Nursery</span>
+        </div>
+        <strong id="pickupPrice">RM0.00</strong>
+      </div>
+
+      <div class="price-row minimum">
+        <div class="label">
+          <span class="cn">最低售价</span>
+          <span class="ms">Harga Minimum</span>
+        </div>
+        <strong id="minimumPrice">RM0.00</strong>
+      </div>
+    </section>
+
+    <section class="sg-section">
+      <div class="sg-title">新加坡 Singapore</div>
+     
+      <div class="sg-info">
+        <p>
+新加坡运费请顾客直接付款给司机。<br>
+Kos penghantaran Singapore dibayar terus oleh pelanggan kepada pemandu.
+</p>
+       <p>
+一个手掌大小：约 SGD15.00<br>
+Anggaran satu tapak tangan: SGD15.00
+</p>
+
+<p>
+两个手掌大小：约 SGD30.00<br>
+Anggaran dua tapak tangan: SGD30.00
+</p>
+
+<p>
+太高或太重可能另加费用。<br>
+Pokok terlalu tinggi atau terlalu berat mungkin dikenakan caj tambahan.
+</p>
+      </div>
+    </section>
+
+    <footer>
+           <div class="version">V2.2</div>
+    </footer>
+  </main>
+
+<script src="script.js?v=2.4"></script>
+</body>
+</html>
