@@ -12,7 +12,8 @@
   <style>
     * { box-sizing: border-box; }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       min-height: 100%;
       background: #eef2ec;
@@ -44,24 +45,29 @@
     iframe {
       display: block;
       width: 100%;
-      min-height: 820px;
+      height: 1px;
+      min-height: 0;
       border: 0;
       background: #fff;
+      overflow: hidden;
     }
 
     @media (max-width: 1180px) {
       .layout {
         grid-template-columns: 1fr;
-      }
-
-      iframe {
-        min-height: 780px;
+        gap: 6px;
       }
     }
 
     @media (max-width: 600px) {
-      .page { padding: 0; }
-      .layout { gap: 8px; }
+      .page {
+        padding: 0;
+      }
+
+      .layout {
+        gap: 2px;
+      }
+
       .panel {
         border-radius: 0;
         box-shadow: none;
@@ -78,6 +84,7 @@
           src="cost-calculator/index.html"
           title="成本与售价计算器"
           loading="eager"
+          scrolling="no"
         ></iframe>
       </section>
 
@@ -87,35 +94,79 @@
           src="bonsai-price-calculator/index.html"
           title="盆景价格计算器"
           loading="eager"
+          scrolling="no"
         ></iframe>
       </section>
     </div>
   </main>
 
   <script>
+    const frameObservers = new WeakMap();
+
+    function getDocumentHeight(doc) {
+      const body = doc.body;
+      const html = doc.documentElement;
+
+      return Math.max(
+        body ? body.scrollHeight : 0,
+        body ? body.offsetHeight : 0,
+        html ? html.scrollHeight : 0,
+        html ? html.offsetHeight : 0
+      );
+    }
+
     function fitFrame(frame) {
       try {
         const doc = frame.contentDocument || frame.contentWindow.document;
-        const height = Math.max(
-          doc.documentElement.scrollHeight,
-          doc.body ? doc.body.scrollHeight : 0
-        );
-        if (height > 0) frame.style.height = `${height + 8}px`;
+        if (!doc || !doc.documentElement) return;
+
+        // 先缩小 iframe，避免子页面的 100vh 把旧高度继续保留下来。
+        frame.style.height = "1px";
+
+        requestAnimationFrame(() => {
+          const height = getDocumentHeight(doc);
+          if (height > 0) {
+            frame.style.height = `${Math.ceil(height) + 2}px`;
+          }
+        });
       } catch (error) {
-        // Same-origin GitHub Pages normally allows automatic height adjustment.
+        // 两个页面都在同一个 GitHub Pages 域名下，正常情况下可以自动调整。
+      }
+    }
+
+    function watchFrame(frame) {
+      try {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc || !doc.body) return;
+
+        const oldObserver = frameObservers.get(frame);
+        if (oldObserver) oldObserver.disconnect();
+
+        const observer = new ResizeObserver(() => fitFrame(frame));
+        observer.observe(doc.documentElement);
+        observer.observe(doc.body);
+        frameObservers.set(frame, observer);
+      } catch (error) {
+        // 忽略无法读取 iframe 的情况。
       }
     }
 
     document.querySelectorAll("iframe").forEach((frame) => {
       frame.addEventListener("load", () => {
         fitFrame(frame);
-        setTimeout(() => fitFrame(frame), 300);
-        setTimeout(() => fitFrame(frame), 1000);
+        watchFrame(frame);
+        setTimeout(() => fitFrame(frame), 150);
+        setTimeout(() => fitFrame(frame), 500);
+        setTimeout(() => fitFrame(frame), 1200);
       });
     });
 
+    let resizeTimer;
     window.addEventListener("resize", () => {
-      document.querySelectorAll("iframe").forEach(fitFrame);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        document.querySelectorAll("iframe").forEach(fitFrame);
+      }, 120);
     });
   </script>
 </body>
