@@ -435,12 +435,7 @@ function updateRawPrice() {
   const raw = parseFloat(input.value.replace(/,/g, '').replace(/[^\d.]/g, '')) || 0;
   document.getElementById('price').value = raw;
 
-  document.getElementById('actualPrice').value = "0";
-  document.getElementById('receivedDisplay').value = "0";
-  document.getElementById('actualNetProfitDisplay').value = "0";
-  document.getElementById('actualMarginDisplay').value = "0";
-
-  document.getElementById('result').innerHTML = "";
+  clearCalculationResult();
   autoSetPotVND();
   autoDetectCurrency();
 }
@@ -661,6 +656,14 @@ document.addEventListener('keydown', function(e) {
   setRate();
   autoSetPotVND();
   autoDetectCurrency();
+
+  ['currency','rate','freight','pot','moss','local','actualPrice']
+    .forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('input', clearCalculationResult);
+      el.addEventListener('change', clearCalculationResult);
+    });
 };
   </script>
 </body>
