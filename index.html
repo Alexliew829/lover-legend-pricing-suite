@@ -10,7 +10,9 @@
   <title>Lover Legend Pricing Suite</title>
   <link rel="icon" href="bonsai-price-calculator/images/icon-192.png" />
   <link rel="apple-touch-icon" href="bonsai-price-calculator/images/apple-touch-icon.png" />
-<style>
+  <link rel="manifest" href="manifest.json" />
+
+  <style>
     * { box-sizing: border-box; }
 
     html,
@@ -208,59 +210,48 @@
       }, 120);
     });
 
-    let appWasHidden = false;
-    let freshReloadStarted = false;
+    const isMobileDevice =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.matchMedia("(pointer: coarse)").matches);
 
-    function reloadFreshPage() {
-      if (freshReloadStarted) return;
-      freshReloadStarted = true;
+    let mobileWentToBackground = false;
+    let mobileRefreshStarted = false;
 
+    function refreshMobileApp() {
+      if (!isMobileDevice || mobileRefreshStarted) return;
+
+      mobileRefreshStarted = true;
       const url = new URL(window.location.href);
       url.searchParams.set("_fresh", Date.now().toString());
       window.location.replace(url.toString());
     }
 
     document.addEventListener("visibilitychange", () => {
+      if (!isMobileDevice) return;
+
       if (document.visibilityState === "hidden") {
-        appWasHidden = true;
+        mobileWentToBackground = true;
         return;
       }
 
-      if (document.visibilityState === "visible" && appWasHidden) {
-        appWasHidden = false;
-        reloadFreshPage();
+      if (
+        document.visibilityState === "visible" &&
+        mobileWentToBackground
+      ) {
+        mobileWentToBackground = false;
+        refreshMobileApp();
       }
     });
 
     window.addEventListener("pageshow", event => {
-      if (event.persisted) {
-        reloadFreshPage();
+      if (isMobileDevice && event.persisted) {
+        refreshMobileApp();
       }
     });
 
-    // 清除合并版曾经注册的 Service Worker 和缓存。
-    // 这不会修改两个计算器的公式或计算逻辑。
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map(registration => registration.unregister()));
-        } catch (error) {
-          // 清除失败时不影响计算器正常使用。
-        }
-
-        if ("caches" in window) {
-          try {
-            const keys = await caches.keys();
-            await Promise.all(
-              keys
-                .filter(key => key.startsWith("lover-legend-pricing-suite"))
-                .map(key => caches.delete(key))
-            );
-          } catch (error) {
-            // 清除失败时不影响计算器正常使用。
-          }
-        }
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
       });
     }
   </script>
