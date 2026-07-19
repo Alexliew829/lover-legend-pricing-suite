@@ -210,45 +210,6 @@
       }, 120);
     });
 
-    const isMobileDevice =
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints > 1 && window.matchMedia("(pointer: coarse)").matches);
-
-    let mobileWentToBackground = false;
-    let mobileRefreshStarted = false;
-
-    function refreshMobileApp() {
-      if (!isMobileDevice || mobileRefreshStarted) return;
-
-      mobileRefreshStarted = true;
-      const url = new URL(window.location.href);
-      url.searchParams.set("_fresh", Date.now().toString());
-      window.location.replace(url.toString());
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (!isMobileDevice) return;
-
-      if (document.visibilityState === "hidden") {
-        mobileWentToBackground = true;
-        return;
-      }
-
-      if (
-        document.visibilityState === "visible" &&
-        mobileWentToBackground
-      ) {
-        mobileWentToBackground = false;
-        refreshMobileApp();
-      }
-    });
-
-    window.addEventListener("pageshow", event => {
-      if (isMobileDevice && event.persisted) {
-        refreshMobileApp();
-      }
-    });
-
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js").catch(() => {});
