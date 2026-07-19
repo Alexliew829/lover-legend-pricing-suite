@@ -262,10 +262,9 @@
        if (!retailInput) return false;
        retailInput.value = Number(price).toFixed(2);
        retailInput.dispatchEvent(new Event("input", { bubbles: true }));
-retailInput.dispatchEvent(new Event("change", { bubbles: true }));
-retailInput.dispatchEvent(new Event("blur", { bubbles: true }));
-
-return true;
+       retailInput.dispatchEvent(new Event("change", { bubbles: true }));
+        
+       return true;
       } catch (error) {
         return false;
       }
