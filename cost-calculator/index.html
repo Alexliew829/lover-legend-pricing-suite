@@ -430,16 +430,32 @@
         setRate();
       }
     }
+function clearCalculationResult(resetActualPrice = false) {
+  if (resetActualPrice) {
+    document.getElementById('actualPrice').value = "0";
+  }
+
+  document.getElementById('receivedDisplay').value = "0";
+  document.getElementById('actualNetProfitDisplay').value = "0";
+  document.getElementById('actualMarginDisplay').value = "0";
+  document.getElementById('result').innerHTML = "";
+}
+
 function updateRawPrice() {
   const input = document.getElementById('price_display');
-  const raw = parseFloat(input.value.replace(/,/g, '').replace(/[^\d.]/g, '')) || 0;
+  const raw = parseFloat(
+    input.value.replace(/,/g, '').replace(/[^\d.]/g, '')
+  ) || 0;
+
   document.getElementById('price').value = raw;
 
-  clearCalculationResult();
+  // 更换进口成本时，清空旧售价和旧计算结果。
+  clearCalculationResult(true);
+
   autoSetPotVND();
   autoDetectCurrency();
 }
-    
+
     function formatDisplayPrice() {
       const input = document.getElementById('price_display');
       const raw = parseFloat(input.value.replace(/,/g, '').replace(/[^\d.]/g, ''));
@@ -657,13 +673,22 @@ document.addEventListener('keydown', function(e) {
   autoSetPotVND();
   autoDetectCurrency();
 
-  ['currency','rate','freight','pot','moss','local','actualPrice']
-    .forEach(id=>{
-      const el=document.getElementById(id);
-      if(!el) return;
-      el.addEventListener('input', clearCalculationResult);
-      el.addEventListener('change', clearCalculationResult);
+  ['currency', 'rate', 'freight', 'pot', 'moss', 'local']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const clearOldQuote = () => clearCalculationResult(true);
+      el.addEventListener('input', clearOldQuote);
+      el.addEventListener('change', clearOldQuote);
     });
+
+  const actualPriceInput = document.getElementById('actualPrice');
+  if (actualPriceInput) {
+    actualPriceInput.addEventListener('input', () => {
+      clearCalculationResult(false);
+    });
+  }
 };
   </script>
 </body>
