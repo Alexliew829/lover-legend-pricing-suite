@@ -430,6 +430,7 @@ function updateRawPrice() {
   document.getElementById('actualMarginDisplay').value = "0";
 
   autoSetPotVND();
+  autoDetectCurrency();
 }
     
     function formatDisplayPrice() {
@@ -647,7 +648,21 @@ document.addEventListener('keydown', function(e) {
     window.onload = () => {
   setRate();
   autoSetPotVND();
+  autoDetectCurrency();
 };
   </script>
 </body>
 </html>
+
+function autoDetectCurrency() {
+  const raw = parseFloat(document.getElementById('price').value) || 0;
+  const currency = document.getElementById('currency');
+  const target = raw >= 100000 ? 'VND' : 'CNY';
+
+  if (currency.value !== target) {
+    currency.value = target;
+    setRate();
+  }
+}
+
+
