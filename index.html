@@ -222,11 +222,112 @@
       }
     }
 
+    let pendingFairPrice = null;
+    let fairPriceObserver = null;
+
+    function extractFairPriceFromCostCalculator() {
+      try {
+        const costFrame = document.getElementById("costFrame");
+        const costDoc =
+          costFrame.contentDocument || costFrame.contentWindow.document;
+        const result = costDoc.getElementById("result");
+
+        if (!result) return null;
+
+        const text = result.textContent || "";
+        const match = text.match(
+          /60%\s*Fair\s*售价\s*[：:]\s*RM\s*([\d,]+(?:\.\d+)?)/i
+        );
+
+        if (!match) return null;
+
+        const value = Number(match[1].replace(/,/g, ""));
+        if (!Number.isFinite(value)) return null;
+
+        return Math.round(value);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function applyFairPriceToBonsaiCalculator(price) {
+      if (!Number.isFinite(price)) return false;
+
+      try {
+        const priceFrame = document.getElementById("priceFrame");
+        const priceDoc =
+          priceFrame.contentDocument || priceFrame.contentWindow.document;
+        const retailInput = priceDoc.getElementById("retailPrice");
+
+        if (!retailInput) return false;
+
+        retailInput.value = String(Math.round(price));
+        retailInput.dispatchEvent(new Event("input", { bubbles: true }));
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function syncFairPriceToBonsaiCalculator() {
+      const fairPrice = extractFairPriceFromCostCalculator();
+      if (!Number.isFinite(fairPrice)) return;
+
+      pendingFairPrice = fairPrice;
+
+      if (applyFairPriceToBonsaiCalculator(fairPrice)) {
+        pendingFairPrice = null;
+      }
+    }
+
+    function watchFairPriceResult() {
+      try {
+        const costFrame = document.getElementById("costFrame");
+        const costDoc =
+          costFrame.contentDocument || costFrame.contentWindow.document;
+        const result = costDoc.getElementById("result");
+
+        if (!result) return;
+
+        if (fairPriceObserver) {
+          fairPriceObserver.disconnect();
+        }
+
+        fairPriceObserver = new MutationObserver(() => {
+          syncFairPriceToBonsaiCalculator();
+        });
+
+        fairPriceObserver.observe(result, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+
+        syncFairPriceToBonsaiCalculator();
+      } catch (error) {
+        // 同源页面正常情况下可以读取；失败时不影响两个计算器。
+      }
+    }
+
     document.querySelectorAll("iframe").forEach((frame) => {
       frame.addEventListener("load", () => {
         prepareFrame(frame);
         fitFrame(frame);
         watchFrame(frame);
+
+        if (frame.id === "costFrame") {
+          watchFairPriceResult();
+        }
+
+        if (
+          frame.id === "priceFrame" &&
+          Number.isFinite(pendingFairPrice)
+        ) {
+          if (applyFairPriceToBonsaiCalculator(pendingFairPrice)) {
+            pendingFairPrice = null;
+          }
+        }
+
         setTimeout(() => fitFrame(frame), 150);
         setTimeout(() => fitFrame(frame), 500);
         setTimeout(() => fitFrame(frame), 1200);
