@@ -1,21 +1,33 @@
-const CACHE_PREFIX = "lover-legend-pricing-suite";
+const CACHE = "lover-legend-pricing-suite-v1.2.2";
+const CORE = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./cost-calculator/index.html",
+  "./bonsai-price-calculator/index.html"
+];
 
 self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    Promise.all([
-      caches.keys().then(keys =>
-        Promise.all(
-          keys
-            .filter(key => key.startsWith(CACHE_PREFIX))
-            .map(key => caches.delete(key))
-        )
-      ),
-      self.registration.unregister(),
-      self.clients.claim()
-    ])
+    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") return;
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
