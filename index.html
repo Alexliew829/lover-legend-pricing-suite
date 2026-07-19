@@ -259,11 +259,13 @@
           priceFrame.contentDocument || priceFrame.contentWindow.document;
         const retailInput = priceDoc.getElementById("retailPrice");
 
-        if (!retailInput) return false;
+       if (!retailInput) return false;
+       retailInput.value = Number(price).toFixed(2);
+       retailInput.dispatchEvent(new Event("input", { bubbles: true }));
+retailInput.dispatchEvent(new Event("change", { bubbles: true }));
+retailInput.dispatchEvent(new Event("blur", { bubbles: true }));
 
-        retailInput.value = String(Math.round(price));
-        retailInput.dispatchEvent(new Event("input", { bubbles: true }));
-        return true;
+return true;
       } catch (error) {
         return false;
       }
