@@ -211,10 +211,18 @@
     });
 
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch(() => {});
-      });
-    }
+  window.addEventListener("load", async () => {
+
+    const reg = await navigator.serviceWorker.register("sw.js");
+
+    reg.update();
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      window.location.reload();
+    });
+
+  });
+}
   </script>
 </body>
 </html>
