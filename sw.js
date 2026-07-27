@@ -1,4 +1,4 @@
-const CACHE = "lover-legend-pricing-suite-v1.2.3-pull-refresh";
+const CACHE = "lover-legend-pricing-suite-v1.3-settings";
 const CORE = [
   "./",
   "./index.html",

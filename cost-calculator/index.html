@@ -315,6 +315,64 @@
 
     const defaultLocal = { CNY: 0, NTD: 20, VND: 20, IDR: 20 };
 
+
+    const PRICING_SETTINGS_KEY = "loverLegendPricingSettingsV1";
+
+    function normalizeExternalPricingSettings(value) {
+      const normalized = {
+        rates: { ...defaultRates },
+        freight: {
+          CNY: parseFloat(defaultFreight.CNY),
+          NTD: parseFloat(defaultFreight.NTD),
+          VND: parseFloat(defaultFreight.VND),
+          IDR: parseFloat(defaultFreight.IDR)
+        }
+      };
+
+      if (!value || typeof value !== "object") return normalized;
+
+      ["CNY", "NTD", "VND", "IDR"].forEach(currency => {
+        const rate = Number(value.rates && value.rates[currency]);
+        const freight = Number(value.freight && value.freight[currency]);
+
+        if (Number.isFinite(rate) && rate > 0) {
+          normalized.rates[currency] = rate;
+        }
+        if (Number.isFinite(freight) && freight >= 0) {
+          normalized.freight[currency] = freight;
+        }
+      });
+
+      return normalized;
+    }
+
+    function readSavedPricingSettings() {
+      try {
+        return normalizeExternalPricingSettings(
+          JSON.parse(localStorage.getItem(PRICING_SETTINGS_KEY) || "null")
+        );
+      } catch (error) {
+        return normalizeExternalPricingSettings(null);
+      }
+    }
+
+    function applyPricingSettings(settings) {
+      const normalized = normalizeExternalPricingSettings(settings);
+
+      ["CNY", "NTD", "VND", "IDR"].forEach(currency => {
+        defaultRates[currency] = normalized.rates[currency];
+        defaultFreight[currency] = `${normalized.freight[currency]}%`;
+      });
+
+      const currencyInput = document.getElementById("currency");
+      if (currencyInput) {
+        setRate();
+        clearCalculationResult(true);
+      }
+    }
+
+    window.applyPricingSettings = applyPricingSettings;
+
     // =======================
     // ✅ 计算器功能
     // =======================
@@ -668,7 +726,14 @@ document.addEventListener('keydown', function(e) {
     toggleCalc(false);
   }
 });
-    window.onload = () => {
+    window.addEventListener("storage", event => {
+  if (event.key === PRICING_SETTINGS_KEY) {
+    applyPricingSettings(readSavedPricingSettings());
+  }
+});
+
+window.onload = () => {
+  applyPricingSettings(readSavedPricingSettings());
   setRate();
   autoSetPotVND();
   autoDetectCurrency();
