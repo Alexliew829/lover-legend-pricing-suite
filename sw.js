@@ -1,9 +1,9 @@
-const CACHE = "lover-legend-pricing-suite-v3.6-fixed-zero-recovery";
+const CACHE = "lover-legend-cost-pricing-v4.8-item-first";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=4.6-fixed-zero-recovery",
+  "./cost-calculator/index.html?v=4.8-item-first",
   "./bonsai-price-calculator/index.html?v=3.6"
 ];
 
