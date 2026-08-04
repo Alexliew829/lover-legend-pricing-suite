@@ -402,7 +402,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.6</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.7</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -786,6 +786,20 @@
         : 0;
     }
 
+    function parseCloudNumber(value) {
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      const normalized = String(value ?? "")
+        .replace(/,/g, "")
+        .replace(/[^0-9.\-]/g, "")
+        .trim();
+
+      const number = Number(normalized);
+      return Number.isFinite(number) ? number : 0;
+    }
+
     function buildCloudImportProductRecords(data) {
       const imports = Array.isArray(data?.imports) ? data.imports : [];
       const batches = Array.isArray(data?.batches) ? data.batches : [];
@@ -819,7 +833,7 @@
         const currency = String(source?.currency || "")
           .trim()
           .toUpperCase();
-        const unitPrice = Number(source?.unitPrice);
+        const unitPrice = parseCloudNumber(source?.unitPrice);
 
         if (
           !productName ||
@@ -849,35 +863,33 @@
           null;
 
         const rate =
-          Number(source?.rate) ||
-          Number(batch?.rate) ||
+          parseCloudNumber(source?.rate) ||
+          parseCloudNumber(batch?.rate) ||
           0;
 
-        const inlandTransport =
-          Number(
-            batch?.chinaTransportCost ??
-            batch?.domesticTransportCost ??
-            batch?.inlandTransportCost ??
-            batch?.localTransportCost ??
-            batch?.chinaFreight ??
-            0
-          ) || 0;
+        const inlandTransport = parseCloudNumber(
+          batch?.chinaTransportCost ??
+          batch?.domesticTransportCost ??
+          batch?.inlandTransportCost ??
+          batch?.localTransportCost ??
+          batch?.chinaFreight ??
+          0
+        );
 
-        const matchingPotCost =
-          Number(
-            batch?.potCost ??
-            batch?.matchingPotCost ??
-            batch?.pairedPotCost ??
-            batch?.potTotalCost ??
-            batch?.potMatchingCost ??
-            0
-          ) || 0;
+        const matchingPotCost = parseCloudNumber(
+          batch?.potCost ??
+          batch?.matchingPotCost ??
+          batch?.pairedPotCost ??
+          batch?.potTotalCost ??
+          batch?.potMatchingCost ??
+          0
+        );
 
         const inlandCost = inlandTransport + matchingPotCost;
 
         const purchaseTotal = batch
           ? (
-              Number(
+              parseCloudNumber(
                 batch?.foreignTotal ??
                 batch?.totalGoodsForeign ??
                 batch?.totalPurchaseForeign ??
@@ -886,7 +898,7 @@
               ) ||
               (Array.isArray(batch?.items)
                 ? batch.items.reduce((sum, item) => {
-                    const stored = Number(
+                    const stored = parseCloudNumber(
                       item?.foreignTotal ??
                       item?.goodsTotal ??
                       item?.totalForeign ??
@@ -894,18 +906,18 @@
                       0
                     );
 
-                    if (Number.isFinite(stored) && stored > 0) {
+                    if (stored > 0) {
                       return sum + stored;
                     }
 
-                    const quantity = Number(
+                    const quantity = parseCloudNumber(
                       item?.originalQuantity ??
                       item?.stockAdded ??
                       item?.quantity
-                    ) || 0;
+                    );
 
                     return sum +
-                      quantity * (Number(item?.unitPrice) || 0);
+                      quantity * parseCloudNumber(item?.unitPrice);
                   }, 0)
                 : 0)
             )
@@ -927,10 +939,10 @@
           unitPrice,
           currency,
           rate,
-          averageCostRM: Number(product?.averageCost) || 0,
+          averageCostRM: parseCloudNumber(product?.averageCost),
           shippingRate: batch
             ? getCloudBatchShippingRate(batch)
-            : Number(source?.shippingRate) || 0,
+            : parseCloudNumber(source?.shippingRate),
           inlandMiscPercent,
           updatedAt: String(
             source?.updatedAt || source?.createdAt || ""
