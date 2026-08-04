@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.1</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.2</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -848,12 +848,89 @@
           product
         ])
       );
-      const batchByNumber = new Map(
-        batches.map(batch => [
-          String(batch?.importNumber || "").trim().toLocaleLowerCase(),
-          batch
-        ])
-      );
+      const batchesByNumber = new Map();
+
+      batches.forEach(batch => {
+        const key = String(batch?.importNumber || "")
+          .trim()
+          .toLocaleLowerCase();
+
+        if (!key) return;
+
+        if (!batchesByNumber.has(key)) {
+          batchesByNumber.set(key, []);
+        }
+
+        batchesByNumber.get(key).push(batch);
+      });
+
+      function getBatchItemsGoodsTotal(batch) {
+        const items = Array.isArray(batch?.items) ? batch.items : [];
+
+        return items.reduce((sum, item) => {
+          const quantity = parseCloudNumber(
+            item?.originalQuantity ??
+            item?.stockAdded ??
+            item?.quantity
+          );
+
+          const unitPrice = parseCloudNumber(item?.unitPrice);
+
+          // Always rebuild the goods total from quantity × original unit price.
+          // This avoids stale or wrongly formatted stored foreignTotal values.
+          return sum + quantity * unitPrice;
+        }, 0);
+      }
+
+      function resolveMatchingBatch(importNumber, productName, unitPrice) {
+        const key = String(importNumber || "")
+          .trim()
+          .toLocaleLowerCase();
+
+        const candidates = batchesByNumber.get(key) || [];
+
+        if (!candidates.length) return null;
+        if (candidates.length === 1) return candidates[0];
+
+        const normalizedName = String(productName || "")
+          .trim()
+          .toLocaleLowerCase();
+
+        const scored = candidates.map(batch => {
+          const items = Array.isArray(batch?.items) ? batch.items : [];
+
+          const exactItem = items.some(item => {
+            const itemName = String(
+              item?.productName || item?.name || ""
+            ).trim().toLocaleLowerCase();
+
+            const itemPrice = parseCloudNumber(item?.unitPrice);
+
+            return itemName === normalizedName &&
+              Math.abs(itemPrice - unitPrice) < 0.000001;
+          });
+
+          const goodsTotal = getBatchItemsGoodsTotal(batch);
+          const updatedAt = Date.parse(
+            batch?.updatedAt || batch?.createdAt || ""
+          ) || 0;
+
+          return {
+            batch,
+            exactItem,
+            goodsTotal,
+            updatedAt
+          };
+        });
+
+        scored.sort((a, b) =>
+          Number(b.exactItem) - Number(a.exactItem) ||
+          Number(b.goodsTotal > 0) - Number(a.goodsTotal > 0) ||
+          b.updatedAt - a.updatedAt
+        );
+
+        return scored[0].batch;
+      }
 
       const records = [];
       const seen = new Set();
@@ -889,8 +966,11 @@
         if (seen.has(key)) return;
         seen.add(key);
 
-        const batch =
-          batchByNumber.get(importNumber.toLocaleLowerCase()) || null;
+        const batch = resolveMatchingBatch(
+          importNumber,
+          productName,
+          unitPrice
+        );
         const product =
           productById.get(String(source?.productId || "")) ||
           productByName.get(productName.toLocaleLowerCase()) ||
@@ -921,41 +1001,26 @@
 
         const inlandCost = inlandTransport + matchingPotCost;
 
-        const purchaseTotal = batch
-          ? (
-              parseCloudNumber(
-                batch?.foreignTotal ??
-                batch?.totalGoodsForeign ??
-                batch?.totalPurchaseForeign ??
-                batch?.goodsForeignTotal ??
-                0
-              ) ||
-              (Array.isArray(batch?.items)
-                ? batch.items.reduce((sum, item) => {
-                    const stored = parseCloudNumber(
-                      item?.foreignTotal ??
-                      item?.goodsTotal ??
-                      item?.totalForeign ??
-                      item?.lineTotal ??
-                      0
-                    );
+        const itemsGoodsTotal = batch
+          ? getBatchItemsGoodsTotal(batch)
+          : 0;
 
-                    if (stored > 0) {
-                      return sum + stored;
-                    }
-
-                    const quantity = parseCloudNumber(
-                      item?.originalQuantity ??
-                      item?.stockAdded ??
-                      item?.quantity
-                    );
-
-                    return sum +
-                      quantity * parseCloudNumber(item?.unitPrice);
-                  }, 0)
-                : 0)
+        const storedBatchGoodsTotal = batch
+          ? parseCloudNumber(
+              batch?.foreignTotal ??
+              batch?.totalGoodsForeign ??
+              batch?.totalPurchaseForeign ??
+              batch?.goodsForeignTotal ??
+              0
             )
           : 0;
+
+        // The product rows are the source of truth for the whole-batch goods
+        // amount. Stored batch totals may be stale after editing a product.
+        const purchaseTotal =
+          itemsGoodsTotal > 0
+            ? itemsGoodsTotal
+            : storedBatchGoodsTotal;
 
         // 内地杂费比例 =
         // （内地运输＋打木架＋搭配花盆费用）÷ 整批货款总额
@@ -978,6 +1043,8 @@
             ? getCloudBatchShippingRate(batch)
             : parseCloudNumber(source?.shippingRate),
           inlandMiscPercent,
+          batchGoodsTotal: purchaseTotal,
+          batchInlandCost: inlandCost,
           updatedAt: String(
             source?.updatedAt || source?.createdAt || ""
           )
@@ -1050,7 +1117,7 @@
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 7,
+            version: 8,
             exportedAt: new Date().toISOString(),
             records
           })
