@@ -85,6 +85,7 @@
     }
 
     .import-product-picker {
+      position: relative;
       margin: 0 0 6px;
     }
 
@@ -95,11 +96,14 @@
       font-size: 15px;
     }
 
-    .import-product-picker input,
-    .import-product-picker select {
+    .import-product-combobox {
+      position: relative;
+    }
+
+    .import-product-search {
       width: 100%;
       min-height: 40px;
-      padding: 7px 9px;
+      padding: 7px 42px 7px 9px;
       border: 1px solid #b8c4b6;
       border-radius: 8px;
       background: #fff;
@@ -107,13 +111,63 @@
       color: #111;
     }
 
-
-    .import-product-picker input {
-      margin-bottom: 4px;
+    .import-product-toggle {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 40px !important;
+      height: 38px;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 0 8px 8px 0 !important;
+      background: #eef4ec !important;
+      color: #174f2d !important;
+      font-size: 18px !important;
     }
 
-    .import-product-picker input::placeholder {
-      color: #888;
+    .import-product-options {
+      position: absolute;
+      z-index: 9998;
+      top: calc(100% + 3px);
+      left: 0;
+      right: 0;
+      max-height: min(330px, 52vh);
+      overflow-y: auto;
+      border: 1px solid #aeb9ac;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .import-product-option {
+      display: block;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 9px 10px !important;
+      border: 0 !important;
+      border-bottom: 1px solid #e4e9e2 !important;
+      border-radius: 0 !important;
+      background: #fff !important;
+      color: #111 !important;
+      text-align: left;
+      font-size: 14px !important;
+      line-height: 1.3;
+    }
+
+    .import-product-option:last-child { border-bottom: 0 !important; }
+    .import-product-option:active,
+    .import-product-option:hover { background: #edf6eb !important; }
+
+    .import-product-option strong,
+    .import-product-option span { display: block; }
+    .import-product-option span { margin-top: 2px; color: #555; font-size: 12px; }
+
+    .import-product-empty {
+      padding: 12px;
+      color: #777;
+      text-align: center;
+      font-size: 13px;
     }
 
     .import-product-status {
@@ -124,9 +178,8 @@
       font-weight: 700;
     }
 
-    .import-product-status.error {
-      color: #b22222;
-    }
+    .import-product-status.error { color: #b22222; }
+
 
   </style>
 </head>
@@ -135,24 +188,28 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.4</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.5</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
   </p>
 
-
   <div class="import-product-picker">
     <label for="importProductSearch">从进口成本与库存系统选择产品：</label>
-    <input
-      id="importProductSearch"
-      type="search"
-      autocomplete="off"
-      placeholder="输入关键字搜索，例如：高提根 / 提根高"
-    />
-    <select id="importProductSelect">
-      <option value="">请选择产品（原外币单价）</option>
-    </select>
+    <div class="import-product-combobox">
+      <input
+        id="importProductSearch"
+        class="import-product-search"
+        type="search"
+        autocomplete="off"
+        placeholder="输入关键字搜索，或点击右边箭头选择"
+        aria-autocomplete="list"
+        aria-controls="importProductOptions"
+        aria-expanded="false"
+      />
+      <button id="importProductToggle" class="import-product-toggle" type="button" aria-label="展开产品">▼</button>
+      <div id="importProductOptions" class="import-product-options" role="listbox" hidden></div>
+    </div>
     <div id="importProductStatus" class="import-product-status"></div>
   </div>
 
@@ -190,7 +247,7 @@
 </div>
 <div class="row">
   <div>
-    <label for="freight">海外到大马运费比例（%）：</label>
+    <label for="freight">海外运费比例：</label>
     <input id="freight" type="text" value="20%" />
   </div>
 
@@ -437,6 +494,9 @@
     const IMPORT_UNIT_PRICE_KEY =
       "loverLegendPricingSuiteImportUnitPrices";
 
+    let importProductRecords = [];
+    let visibleImportProductRecords = [];
+
     function readImportUnitPriceRecords() {
       try {
         const payload = JSON.parse(
@@ -461,6 +521,13 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+    }
+
+    function formatAverageCostRM(value) {
+      return `RM ${Number(value || 0).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
     }
 
     function normalizeImportProductSearchText(value) {
@@ -499,100 +566,121 @@
       ].join("|");
     }
 
+    function closeImportProductOptions() {
+      const input = document.getElementById("importProductSearch");
+      const options = document.getElementById("importProductOptions");
+      if (options) options.hidden = true;
+      if (input) input.setAttribute("aria-expanded", "false");
+    }
+
+    function openImportProductOptions() {
+      renderImportProductOptions();
+      const input = document.getElementById("importProductSearch");
+      const options = document.getElementById("importProductOptions");
+      if (options) options.hidden = false;
+      if (input) input.setAttribute("aria-expanded", "true");
+    }
+
     function renderImportProductOptions() {
       const searchInput = document.getElementById("importProductSearch");
-      const select = document.getElementById("importProductSelect");
+      const options = document.getElementById("importProductOptions");
       const status = document.getElementById("importProductStatus");
-      if (!select || !status) return;
+      if (!options || !status) return;
 
-      const currentValue = select.value;
       const keyword = String(searchInput?.value || "").trim();
-      const records = readImportUnitPriceRecords();
-      const filteredRecords = records.filter(record => {
+      importProductRecords = readImportUnitPriceRecords();
+      visibleImportProductRecords = importProductRecords.filter(record => {
         const searchable = [
           record.productName,
           record.importNumber,
           record.currency,
-          record.unitPrice
+          record.unitPrice,
+          record.averageCostRM,
+          record.shippingRate
         ].join(" ");
-
         return unorderedImportProductMatch(searchable, keyword);
       });
 
-      select.innerHTML =
-        '<option value="">请选择产品（原外币单价）</option>' +
-        filteredRecords.map(record => {
-          const name = String(record.productName || "未命名产品");
-          const number = String(record.importNumber || "无进口编号");
-          const currency = String(record.currency || "").toUpperCase();
-          const unitPrice = formatOriginalUnitPrice(record.unitPrice);
-          const key = encodeURIComponent(getImportProductRecordKey(record));
+      options.innerHTML = visibleImportProductRecords.length
+        ? visibleImportProductRecords.map((record, index) => {
+            const name = String(record.productName || "未命名产品");
+            const number = String(record.importNumber || "无进口编号");
+            const currency = String(record.currency || "").toUpperCase();
+            const unitPrice = formatOriginalUnitPrice(record.unitPrice);
+            const averageCost = formatAverageCostRM(record.averageCostRM);
+            const freight = Number(record.shippingRate) > 0
+              ? ` · 海外运费 ${formatOriginalUnitPrice(record.shippingRate)}%`
+              : "";
 
-          return `<option value="${key}">${name} · ${number} · ${currency} ${unitPrice}</option>`;
-        }).join("");
+            return `<button type="button" class="import-product-option" role="option" data-record-index="${index}">
+              <strong>${name}</strong>
+              <span>${number} · ${currency} ${unitPrice} · 平均成本 ${averageCost}${freight}</span>
+            </button>`;
+          }).join("")
+        : '<div class="import-product-empty">没有符合的产品</div>';
 
-      if (
-        currentValue &&
-        Array.from(select.options).some(option => option.value === currentValue)
-      ) {
-        select.value = currentValue;
-      }
-
-      status.classList.toggle("error", records.length === 0);
-
-      if (!records.length) {
-        status.textContent =
-          "暂无资料，请先打开进口成本与库存系统并完成同步";
-        return;
-      }
-
-      status.classList.remove("error");
-      status.textContent = keyword
-        ? `找到 ${filteredRecords.length} / ${records.length} 笔原外币单价`
-        : `已读取 ${records.length} 笔原外币单价`;
+      status.classList.toggle("error", importProductRecords.length === 0);
+      status.textContent = !importProductRecords.length
+        ? "暂无资料，请先打开进口成本与库存系统并完成同步"
+        : keyword
+          ? `找到 ${visibleImportProductRecords.length} / ${importProductRecords.length} 笔产品资料`
+          : `已读取 ${importProductRecords.length} 笔产品资料`;
     }
 
-    function applySelectedImportProduct() {
-      const select = document.getElementById("importProductSelect");
-      if (!select || select.value === "") return;
-
-      const selectedKey = decodeURIComponent(select.value);
-      const records = readImportUnitPriceRecords();
-      const record = records.find(item =>
-        getImportProductRecordKey(item) === selectedKey
-      );
+    function applySelectedImportProduct(record) {
       if (!record) return;
 
+      const searchInput = document.getElementById("importProductSearch");
       const priceInput = document.getElementById("price_display");
       const hiddenPrice = document.getElementById("price");
       const currencyInput = document.getElementById("currency");
+      const rateInput = document.getElementById("rate");
+      const freightInput = document.getElementById("freight");
+      const localInput = document.getElementById("local");
       const currency = String(record.currency || "").toUpperCase();
       const unitPrice = Number(record.unitPrice);
+      const recordRate = Number(record.rate);
+      const shippingRate = Number(record.shippingRate);
 
       if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
 
+      if (searchInput) searchInput.value = String(record.productName || "");
       priceInput.value = formatOriginalUnitPrice(unitPrice);
       hiddenPrice.value = String(unitPrice);
 
       if (
         currencyInput &&
-        Array.from(currencyInput.options).some(option =>
-          option.value === currency
-        )
+        Array.from(currencyInput.options).some(option => option.value === currency)
       ) {
         currencyInput.value = currency;
-        setRate();
       }
+
+      if (rateInput) {
+        const finalRate = Number.isFinite(recordRate) && recordRate > 0
+          ? recordRate
+          : defaultRates[currency];
+        rateInput.value = Number(finalRate || 0).toFixed(6);
+      }
+
+      if (freightInput) {
+        const finalFreight = Number.isFinite(shippingRate) && shippingRate > 0
+          ? shippingRate
+          : parseFloat(defaultFreight[currency]) || 0;
+        freightInput.value = `${finalFreight}%`;
+      }
+
+      if (localInput) localInput.value = defaultLocal[currency] ?? 0;
 
       clearCalculationResult(true);
       autoSetPotVND();
+      closeImportProductOptions();
 
       const status = document.getElementById("importProductStatus");
       if (status) {
         status.classList.remove("error");
         status.textContent =
-          `${record.productName} · ${currency} ` +
-          `${formatOriginalUnitPrice(unitPrice)} 已带入，可继续手动修改`;
+          `${record.productName} · ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
+          ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)} 已带入，可继续手动修改`;
       }
     }
 
@@ -969,27 +1057,40 @@ window.onload = () => {
 
   const importProductSearch =
     document.getElementById("importProductSearch");
-  const importProductSelect =
-    document.getElementById("importProductSelect");
+  const importProductToggle =
+    document.getElementById("importProductToggle");
+  const importProductOptions =
+    document.getElementById("importProductOptions");
 
-  importProductSearch?.addEventListener(
-    "input",
-    renderImportProductOptions
-  );
-
-  importProductSearch?.addEventListener("search", () => {
+  importProductSearch?.addEventListener("focus", openImportProductOptions);
+  importProductSearch?.addEventListener("click", openImportProductOptions);
+  importProductSearch?.addEventListener("input", () => {
     renderImportProductOptions();
+    openImportProductOptions();
   });
 
-  importProductSelect?.addEventListener(
-    "change",
-    applySelectedImportProduct
-  );
+  importProductToggle?.addEventListener("click", event => {
+    event.preventDefault();
+    if (importProductOptions?.hidden) {
+      importProductSearch?.focus();
+      openImportProductOptions();
+    } else {
+      closeImportProductOptions();
+    }
+  });
 
-  importProductSelect?.addEventListener(
-    "focus",
-    renderImportProductOptions
-  );
+  importProductOptions?.addEventListener("click", event => {
+    const option = event.target.closest(".import-product-option");
+    if (!option) return;
+    const record = visibleImportProductRecords[Number(option.dataset.recordIndex)];
+    applySelectedImportProduct(record);
+  });
+
+  document.addEventListener("pointerdown", event => {
+    if (!event.target.closest(".import-product-picker")) {
+      closeImportProductOptions();
+    }
+  });
 
   ['currency', 'rate', 'freight', 'pot', 'moss', 'local']
     .forEach(id => {
