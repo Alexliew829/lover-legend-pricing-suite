@@ -1,4 +1,4 @@
-const CACHE = "lover-legend-pricing-suite-v1.8-inland-malaysia-fees";
+const CACHE = "lover-legend-pricing-suite-v1.9-inland-percent";
 const CORE = [
   "./",
   "./index.html",
