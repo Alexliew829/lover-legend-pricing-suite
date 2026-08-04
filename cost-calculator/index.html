@@ -402,7 +402,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.5</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.6</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -911,11 +911,11 @@
             )
           : 0;
 
-        const inlandGrandTotal = purchaseTotal + inlandCost;
-
+        // 内地杂费比例 =
+        // （内地运输＋打木架＋搭配花盆费用）÷ 整批货款总额
         const inlandMiscPercent =
-          inlandGrandTotal > 0
-            ? inlandCost / inlandGrandTotal * 100
+          purchaseTotal > 0
+            ? inlandCost / purchaseTotal * 100
             : 0;
 
         records.push({
