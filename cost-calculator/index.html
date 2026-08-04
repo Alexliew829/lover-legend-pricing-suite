@@ -359,6 +359,15 @@
         min-height: 1px;
       }
 
+      .mobile-product-backdrop {
+        display: block;
+        position: fixed;
+        z-index: 99998;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.18);
+        touch-action: none;
+      }
+
       .mobile-product-search-wrap {
         display: block;
         position: fixed;
@@ -370,8 +379,15 @@
         background: #fff;
       }
 
+      .mobile-product-search-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
       .mobile-product-search {
-        width: 100%;
+        flex: 1;
+        width: auto;
         height: 46px;
         min-height: 46px;
         margin: 0;
@@ -381,6 +397,17 @@
         font-size: 18px;
         font-weight: 700;
         background: #fff;
+      }
+
+      .mobile-product-close {
+        flex: 0 0 48px;
+        height: 46px;
+        border: 1px solid #bbb;
+        border-radius: 9px;
+        background: #f3f3f3;
+        font-size: 24px;
+        font-weight: 900;
+        color: #333;
       }
 
       .import-product-option strong {
@@ -395,7 +422,10 @@
     }
 
     @media (min-width: 601px) {
-      .mobile-product-search-wrap { display: none; }
+      .mobile-product-search-wrap,
+      .mobile-product-backdrop {
+        display: none;
+      }
     }
 
 
@@ -406,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.8</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.9</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1118,7 +1148,10 @@
     function closeImportProductOptions() {
       const input = document.getElementById("importProductSearch");
       const options = document.getElementById("importProductOptions");
+      const backdrop = document.getElementById("mobileProductBackdrop");
+
       if (options) options.hidden = true;
+      if (backdrop) backdrop.remove();
       if (input) input.setAttribute("aria-expanded", "false");
     }
 
@@ -1149,9 +1182,19 @@
       let list =
         options.querySelector(".import-product-list");
 
+      if (!document.getElementById("mobileProductBackdrop")) {
+        const backdrop = document.createElement("div");
+        backdrop.id = "mobileProductBackdrop";
+        backdrop.className = "mobile-product-backdrop";
+        document.body.appendChild(backdrop);
+      }
+
       if (!searchWrap) {
         searchWrap = document.createElement("div");
         searchWrap.className = "mobile-product-search-wrap";
+
+        const row = document.createElement("div");
+        row.className = "mobile-product-search-row";
 
         searchInput = document.createElement("input");
         searchInput.id = "mobileImportProductSearch";
@@ -1162,7 +1205,16 @@
         searchInput.spellcheck = false;
         searchInput.placeholder = "输入中文或产品编号搜索";
 
-        searchWrap.appendChild(searchInput);
+        const closeButton = document.createElement("button");
+        closeButton.id = "mobileProductClose";
+        closeButton.className = "mobile-product-close";
+        closeButton.type = "button";
+        closeButton.textContent = "×";
+        closeButton.setAttribute("aria-label", "关闭产品列表");
+
+        row.appendChild(searchInput);
+        row.appendChild(closeButton);
+        searchWrap.appendChild(row);
         options.appendChild(searchWrap);
       }
 
@@ -1240,6 +1292,14 @@
         : '<div class="import-product-empty">没有符合的产品</div>';
 
       listTarget.scrollTop = previousScrollTop;
+
+      if (isMobile && mobileSearchInput) {
+        requestAnimationFrame(() => {
+          if (!options.hidden) {
+            mobileSearchInput.focus({ preventScroll: true });
+          }
+        });
+      }
 
       status.classList.toggle(
         "error",
@@ -1800,15 +1860,38 @@ window.onload = () => {
     applySelectedImportProduct(record);
   };
 
-  importProductOptions?.addEventListener(
-    "pointerup",
-    chooseImportProduct
-  );
+  let productTouchStartX = 0;
+  let productTouchStartY = 0;
+  let productTouchMoved = false;
 
-  importProductOptions?.addEventListener(
-    "click",
-    chooseImportProduct
-  );
+  importProductOptions?.addEventListener("touchstart", event => {
+    if (!event.touches || event.touches.length !== 1) return;
+    productTouchStartX = event.touches[0].clientX;
+    productTouchStartY = event.touches[0].clientY;
+    productTouchMoved = false;
+  }, { passive: true });
+
+  importProductOptions?.addEventListener("touchmove", event => {
+    if (!event.touches || event.touches.length !== 1) return;
+
+    const dx = Math.abs(event.touches[0].clientX - productTouchStartX);
+    const dy = Math.abs(event.touches[0].clientY - productTouchStartY);
+
+    if (dx > 8 || dy > 8) {
+      productTouchMoved = true;
+    }
+  }, { passive: true });
+
+  importProductOptions?.addEventListener("click", event => {
+    if (productTouchMoved) {
+      event.preventDefault();
+      event.stopPropagation();
+      productTouchMoved = false;
+      return;
+    }
+
+    chooseImportProduct(event);
+  });
 
   let mobileImportSearchComposing = false;
   let mobileImportSearchTimer = 0;
@@ -1844,10 +1927,22 @@ window.onload = () => {
   });
 
   document.addEventListener("pointerdown", event => {
+    const isMobile =
+      window.matchMedia("(max-width: 600px)").matches;
+
+    if (isMobile) return;
+
     const insidePicker = event.target.closest(".import-product-picker");
     const insideOptions = event.target.closest("#importProductOptions");
 
     if (!insidePicker && !insideOptions) {
+      closeImportProductOptions();
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (event.target.id === "mobileProductClose") {
+      event.preventDefault();
       closeImportProductOptions();
     }
   });
