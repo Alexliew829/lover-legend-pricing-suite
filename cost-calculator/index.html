@@ -83,6 +83,41 @@
       white-space: nowrap !important;
       touch-action: manipulation !important;
     }
+
+    .import-product-picker {
+      margin: 0 0 6px;
+    }
+
+    .import-product-picker label {
+      display: block;
+      margin-bottom: 3px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .import-product-picker select {
+      width: 100%;
+      min-height: 40px;
+      padding: 7px 9px;
+      border: 1px solid #b8c4b6;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+      color: #111;
+    }
+
+    .import-product-status {
+      min-height: 18px;
+      margin-top: 2px;
+      color: #666;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .import-product-status.error {
+      color: #b22222;
+    }
+
   </style>
 </head>
 
@@ -95,6 +130,15 @@
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
   </p>
+
+
+  <div class="import-product-picker">
+    <label for="importProductSelect">从进口成本与库存系统选择产品：</label>
+    <select id="importProductSelect">
+      <option value="">请选择产品（原外币单价）</option>
+    </select>
+    <div id="importProductStatus" class="import-product-status"></div>
+  </div>
 
   <div class="row">
   <div style="flex:2;">
@@ -372,6 +416,108 @@
     }
 
     window.applyPricingSettings = applyPricingSettings;
+
+
+    const IMPORT_UNIT_PRICE_KEY =
+      "loverLegendPricingSuiteImportUnitPrices";
+
+    function readImportUnitPriceRecords() {
+      try {
+        const payload = JSON.parse(
+          localStorage.getItem(IMPORT_UNIT_PRICE_KEY) || "null"
+        );
+
+        return Array.isArray(payload?.records)
+          ? payload.records.filter(record =>
+              record &&
+              record.category === "盆栽" &&
+              Number(record.unitPrice) > 0 &&
+              String(record.currency || "").trim()
+            )
+          : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function formatOriginalUnitPrice(value) {
+      return Number(value).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function renderImportProductOptions() {
+      const select = document.getElementById("importProductSelect");
+      const status = document.getElementById("importProductStatus");
+      if (!select || !status) return;
+
+      const currentValue = select.value;
+      const records = readImportUnitPriceRecords();
+
+      select.innerHTML =
+        '<option value="">请选择产品（原外币单价）</option>' +
+        records.map((record, index) => {
+          const name = String(record.productName || "未命名产品");
+          const number = String(record.importNumber || "无进口编号");
+          const currency = String(record.currency || "").toUpperCase();
+          const unitPrice = formatOriginalUnitPrice(record.unitPrice);
+
+          return `<option value="${index}">
+            ${name} · ${number} · ${currency} ${unitPrice}
+          </option>`;
+        }).join("");
+
+      if (currentValue && Number(currentValue) < records.length) {
+        select.value = currentValue;
+      }
+
+      status.classList.toggle("error", records.length === 0);
+      status.textContent = records.length
+        ? `已读取 ${records.length} 笔原外币单价`
+        : "暂无资料，请先打开进口成本与库存系统并完成同步";
+    }
+
+    function applySelectedImportProduct() {
+      const select = document.getElementById("importProductSelect");
+      if (!select || select.value === "") return;
+
+      const records = readImportUnitPriceRecords();
+      const record = records[Number(select.value)];
+      if (!record) return;
+
+      const priceInput = document.getElementById("price_display");
+      const hiddenPrice = document.getElementById("price");
+      const currencyInput = document.getElementById("currency");
+      const currency = String(record.currency || "").toUpperCase();
+      const unitPrice = Number(record.unitPrice);
+
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
+
+      priceInput.value = formatOriginalUnitPrice(unitPrice);
+      hiddenPrice.value = String(unitPrice);
+
+      if (
+        currencyInput &&
+        Array.from(currencyInput.options).some(option =>
+          option.value === currency
+        )
+      ) {
+        currencyInput.value = currency;
+        setRate();
+      }
+
+      clearCalculationResult(true);
+      autoSetPotVND();
+
+      const status = document.getElementById("importProductStatus");
+      if (status) {
+        status.classList.remove("error");
+        status.textContent =
+          `${record.productName} · ${currency} ` +
+          `${formatOriginalUnitPrice(unitPrice)} 已带入，可继续手动修改`;
+      }
+    }
 
     // =======================
     // ✅ 计算器功能
@@ -730,6 +876,10 @@ document.addEventListener('keydown', function(e) {
   if (event.key === PRICING_SETTINGS_KEY) {
     applyPricingSettings(readSavedPricingSettings());
   }
+
+  if (event.key === IMPORT_UNIT_PRICE_KEY) {
+    renderImportProductOptions();
+  }
 });
 
 window.onload = () => {
@@ -737,6 +887,21 @@ window.onload = () => {
   setRate();
   autoSetPotVND();
   autoDetectCurrency();
+
+  renderImportProductOptions();
+
+  const importProductSelect =
+    document.getElementById("importProductSelect");
+
+  importProductSelect?.addEventListener(
+    "change",
+    applySelectedImportProduct
+  );
+
+  importProductSelect?.addEventListener(
+    "focus",
+    renderImportProductOptions
+  );
 
   ['currency', 'rate', 'freight', 'pot', 'moss', 'local']
     .forEach(id => {
