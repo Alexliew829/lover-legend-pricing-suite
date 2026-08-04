@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.2</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.3</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -769,55 +769,59 @@
       "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
 
     function getCloudBatchShippingRate(batch) {
-      const storedRate = Number(batch?.shippingRate);
-      if (Number.isFinite(storedRate) && storedRate > 0) {
-        return storedRate;
-      }
+      const shippingMY = parseCloudNumber(batch?.shippingMY);
+      const rate = parseCloudNumber(batch?.rate);
 
-      const shippingMY = Number(batch?.shippingMY) || 0;
-      if (shippingMY <= 0) return 0;
+      if (shippingMY <= 0 || rate <= 0) return 0;
 
-      let allForeignCostsRM =
-        Number(batch?.totalForeignCostsRM) || 0;
+      const items = Array.isArray(batch?.items)
+        ? batch.items
+        : [];
 
-      if (allForeignCostsRM <= 0) {
-        const items = Array.isArray(batch?.items)
-          ? batch.items
-          : [];
+      const itemsGoodsTotal = items.reduce((sum, item) => {
+        const quantity = parseCloudNumber(
+          item?.originalQuantity ??
+          item?.stockAdded ??
+          item?.quantity
+        );
+        const unitPrice = parseCloudNumber(item?.unitPrice);
+        return sum + quantity * unitPrice;
+      }, 0);
 
-        const rate =
-          Number(batch?.rate) ||
-          Number(items.find(item => Number(item?.rate) > 0)?.rate) ||
-          0;
+      const storedGoodsTotal = parseCloudNumber(
+        batch?.foreignTotal ??
+        batch?.totalGoodsForeign ??
+        batch?.totalPurchaseForeign ??
+        batch?.goodsForeignTotal
+      );
 
-        const productForeignTotal = items.reduce((sum, item) => {
-          const stored = Number(item?.foreignTotal);
-          if (Number.isFinite(stored) && stored > 0) {
-            return sum + stored;
-          }
+      const goodsTotal =
+        storedGoodsTotal > 0
+          ? storedGoodsTotal
+          : itemsGoodsTotal;
 
-          const quantity = Number(
-            item?.originalQuantity ??
-            item?.stockAdded ??
-            item?.quantity
-          ) || 0;
+      const inlandTransport = parseCloudNumber(
+        batch?.chinaTransportCost ??
+        batch?.domesticTransportCost ??
+        batch?.inlandTransportCost ??
+        batch?.localTransportCost ??
+        batch?.chinaFreight
+      );
 
-          return sum + quantity * (Number(item?.unitPrice) || 0);
-        }, 0);
+      const matchingPotCost = parseCloudNumber(
+        batch?.potCost ??
+        batch?.matchingPotCost ??
+        batch?.pairedPotCost ??
+        batch?.potTotalCost ??
+        batch?.potMatchingCost
+      );
 
-        const foreignGrandTotal =
-          productForeignTotal +
-          (Number(batch?.chinaTransportCost) || 0) +
-          (Number(batch?.potCost) || 0);
+      const totalForeignCost =
+        goodsTotal + inlandTransport + matchingPotCost;
 
-        if (rate > 0 && foreignGrandTotal > 0) {
-          allForeignCostsRM = foreignGrandTotal / rate;
-        }
-      }
+      if (totalForeignCost <= 0) return 0;
 
-      return allForeignCostsRM > 0
-        ? shippingMY / allForeignCostsRM * 100
-        : 0;
+      return shippingMY / (totalForeignCost / rate) * 100;
     }
 
     function parseCloudNumber(value) {
@@ -1015,12 +1019,13 @@
             )
           : 0;
 
-        // The product rows are the source of truth for the whole-batch goods
-        // amount. Stored batch totals may be stale after editing a product.
+        // The saved batch total is the same value displayed by the import
+        // system as “整批货款总额”, so it is the primary source of truth.
+        // Product-row summation is only a fallback when the batch total is empty.
         const purchaseTotal =
-          itemsGoodsTotal > 0
-            ? itemsGoodsTotal
-            : storedBatchGoodsTotal;
+          storedBatchGoodsTotal > 0
+            ? storedBatchGoodsTotal
+            : itemsGoodsTotal;
 
         // 内地杂费比例 =
         // （内地运输＋打木架＋搭配花盆费用）÷ 整批货款总额
@@ -1117,7 +1122,7 @@
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 8,
+            version: 9,
             exportedAt: new Date().toISOString(),
             records
           })
@@ -1463,6 +1468,7 @@
             Number.isFinite(inlandMiscPercent) ? inlandMiscPercent : 0
           ).toFixed(2)}%` +
           ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}` +
+          ` · 内地杂费 ${Number(record.inlandMiscPercent || 0).toFixed(2)}%` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}% 已带入，可继续手动修改`;
       }
     }
