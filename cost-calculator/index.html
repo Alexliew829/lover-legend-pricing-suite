@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.4</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.6</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -769,6 +769,30 @@
       "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
 
     function getCloudBatchShippingRate(batch) {
+      const hasFixedShippingRate =
+        batch?.fixedShippingRate !== undefined &&
+        batch?.fixedShippingRate !== null &&
+        String(batch.fixedShippingRate).trim() !== "";
+
+      if (hasFixedShippingRate) {
+        const fixedShippingRate =
+          parseCloudNumber(batch.fixedShippingRate);
+
+        const historicalShippingRate =
+          parseCloudNumber(
+            batch?.shippingRate ??
+            batch?.overseasShippingRate
+          );
+
+        if (fixedShippingRate > 0) {
+          return fixedShippingRate;
+        }
+
+        if (historicalShippingRate > 0) {
+          return historicalShippingRate;
+        }
+      }
+
       const shippingMY = parseCloudNumber(
         batch?.shippingMY ??
         batch?.overseasShippingMY ??
@@ -963,7 +987,22 @@
             batch?.potMatchingCost
           );
 
+          const fixedSnapshotScore =
+            Number(batch?.costSnapshotLocked === true) * 10 +
+            Number(
+              String(batch?.costSnapshotVersion || "") === "3.02"
+            ) * 10 +
+            Number(
+              batch?.fixedShippingRate !== undefined &&
+              batch?.fixedShippingRate !== null
+            ) * 5 +
+            Number(
+              batch?.fixedInlandMiscPercent !== undefined &&
+              batch?.fixedInlandMiscPercent !== null
+            ) * 5;
+
           const dataScore =
+            fixedSnapshotScore +
             Number(goodsTotal > 0) +
             Number(rate > 0) +
             Number(shippingMY > 0) +
@@ -1036,6 +1075,8 @@
           null;
 
         const rate =
+          parseCloudNumber(source?.fixedRate) ||
+          parseCloudNumber(batch?.fixedRate) ||
           parseCloudNumber(source?.rate) ||
           parseCloudNumber(batch?.rate) ||
           0;
@@ -1066,6 +1107,7 @@
 
         const storedBatchGoodsTotal = batch
           ? parseCloudNumber(
+              batch?.originalGoodsTotalForeign ??
               batch?.foreignTotal ??
               batch?.totalGoodsForeign ??
               batch?.totalPurchaseForeign ??
@@ -1089,6 +1131,16 @@
             ? inlandCost / purchaseTotal * 100
             : 0;
 
+        const hasFixedInlandMiscPercent =
+          source?.fixedInlandMiscPercent !== undefined &&
+          source?.fixedInlandMiscPercent !== null &&
+          String(source.fixedInlandMiscPercent).trim() !== "";
+
+        const hasBatchFixedInlandMiscPercent =
+          batch?.fixedInlandMiscPercent !== undefined &&
+          batch?.fixedInlandMiscPercent !== null &&
+          String(batch.fixedInlandMiscPercent).trim() !== "";
+
         const storedInlandMiscPercent = parseCloudNumber(
           source?.inlandMiscPercent ??
           source?.inlandFeePercent ??
@@ -1096,9 +1148,23 @@
         );
 
         const inlandMiscPercent =
-          calculatedInlandMiscPercent > 0
-            ? calculatedInlandMiscPercent
-            : storedInlandMiscPercent;
+          hasFixedInlandMiscPercent
+            ? Math.max(
+                0,
+                parseCloudNumber(source.fixedInlandMiscPercent)
+              )
+            : (
+                hasBatchFixedInlandMiscPercent
+                  ? Math.max(
+                      0,
+                      parseCloudNumber(batch.fixedInlandMiscPercent)
+                    )
+                  : (
+                      calculatedInlandMiscPercent > 0
+                        ? calculatedInlandMiscPercent
+                        : storedInlandMiscPercent
+                    )
+              );
 
         records.push({
           id: String(source?.id || key),
@@ -1110,7 +1176,67 @@
           currency,
           rate,
           averageCostRM: parseCloudNumber(product?.averageCost),
+          fixedUnitCostRM: parseCloudNumber(
+            source?.fixedUnitCostRM ??
+            source?.unitCost
+          ),
+          costSnapshotVersion: String(
+            source?.costSnapshotVersion ??
+            batch?.costSnapshotVersion ??
+            ""
+          ),
+          costSnapshotLocked:
+            source?.costSnapshotLocked === true ||
+            batch?.costSnapshotLocked === true,
           shippingRate: (() => {
+            const hasSourceFixedShippingRate =
+              source?.fixedShippingRate !== undefined &&
+              source?.fixedShippingRate !== null &&
+              String(source.fixedShippingRate).trim() !== "";
+
+            if (hasSourceFixedShippingRate) {
+              const fixedShippingRate =
+                parseCloudNumber(source.fixedShippingRate);
+
+              const historicalShippingRate =
+                parseCloudNumber(
+                  source?.shippingRate ??
+                  source?.overseasShippingRate
+                );
+
+              if (fixedShippingRate > 0) {
+                return fixedShippingRate;
+              }
+
+              if (historicalShippingRate > 0) {
+                return historicalShippingRate;
+              }
+            }
+
+            const hasBatchFixedShippingRate =
+              batch?.fixedShippingRate !== undefined &&
+              batch?.fixedShippingRate !== null &&
+              String(batch.fixedShippingRate).trim() !== "";
+
+            if (hasBatchFixedShippingRate) {
+              const fixedShippingRate =
+                parseCloudNumber(batch.fixedShippingRate);
+
+              const historicalShippingRate =
+                parseCloudNumber(
+                  batch?.shippingRate ??
+                  batch?.overseasShippingRate
+                );
+
+              if (fixedShippingRate > 0) {
+                return fixedShippingRate;
+              }
+
+              if (historicalShippingRate > 0) {
+                return historicalShippingRate;
+              }
+            }
+
             const batchShippingRate = batch
               ? getCloudBatchShippingRate(batch)
               : 0;
@@ -1120,8 +1246,6 @@
               source?.overseasShippingRate
             );
 
-            // Batch calculation is preferred. Historical import records are
-            // the safe fallback when a batch field is missing or was cleared.
             return batchShippingRate > 0
               ? batchShippingRate
               : storedImportShippingRate;
@@ -1201,7 +1325,7 @@
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 10,
+            version: 14,
             exportedAt: new Date().toISOString(),
             records
           })
