@@ -233,41 +233,78 @@
     }
 
     @media (max-width: 600px) {
+      body {
+        padding: 4px 10px;
+      }
+
+      h1 {
+        gap: 7px;
+        margin: 4px 0 2px;
+        font-size: 27px;
+        line-height: 1.05;
+        white-space: nowrap;
+      }
+
+      h1 img {
+        height: 34px;
+      }
+
+      body > p {
+        margin: 4px 0 12px !important;
+        font-size: 20px !important;
+        line-height: 1.05;
+      }
+
       .source-cost-row {
-        gap: 8px;
-        align-items: flex-start;
+        display: block;
       }
 
       .source-cost-row .import-product-picker,
       .source-cost-row .import-cost-field {
-        flex: 1 1 0;
-        width: calc(50% - 4px);
+        width: 100%;
         min-width: 0;
+        margin: 0 0 5px;
       }
 
-      .source-cost-row label {
-        min-height: 46px;
-        display: flex;
-        align-items: flex-end;
+      .source-cost-row > div > label {
+        height: auto;
+        min-height: 0;
+        margin: 0 0 3px;
+        align-items: center;
+      }
+
+      .source-cost-row .import-product-combobox,
+      .source-cost-row #price_display {
+        height: 40px;
+        min-height: 40px;
+      }
+
+      .source-cost-row .import-cost-field > label {
+        min-height: 28px;
+      }
+
+      .source-cost-row .import-cost-field .mini-btn {
+        bottom: 0;
+        transform: none;
       }
 
       .import-product-search {
-        font-size: 14px;
-        min-height: 42px;
+        font-size: 15px;
+        min-height: 40px;
       }
 
       .import-product-toggle {
-        height: 40px;
+        height: 38px;
       }
 
       .import-product-options {
         position: fixed;
         z-index: 100000;
-        top: 14vh;
-        left: 10px;
-        right: 10px;
+        top: 12vh;
+        left: 8px;
+        right: 8px;
         width: auto;
-        max-height: 70vh;
+        max-height: 74vh;
         border-radius: 12px;
         box-shadow: 0 12px 34px rgba(0,0,0,.28);
         overscroll-behavior: contain;
@@ -280,7 +317,34 @@
       }
 
       .import-product-status {
-        margin-top: 4px;
+        min-height: 15px;
+        margin-top: 2px;
+        font-size: 11px;
+      }
+
+      .row {
+        gap: 6px;
+      }
+
+      input,
+      select {
+        padding: 7px;
+        margin: 2px 0;
+      }
+
+      label {
+        font-size: 14px;
+      }
+
+      .result {
+        margin-top: 8px;
+        padding: 7px;
+      }
+
+      .result .entry {
+        font-size: 16px !important;
+        line-height: 1.25;
+        margin: 2px 0;
       }
     }
 
@@ -292,7 +356,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.1</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.3</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
