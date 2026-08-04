@@ -1,10 +1,10 @@
-const CACHE = "lover-legend-pricing-suite-v3.4-shipping-fallback-fix";
+const CACHE = "lover-legend-pricing-suite-v3.6-fixed-zero-recovery";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=4.4-shipping-fallback-fix",
-  "./bonsai-price-calculator/index.html?v=3.4"
+  "./cost-calculator/index.html?v=4.6-fixed-zero-recovery",
+  "./bonsai-price-calculator/index.html?v=3.6"
 ];
 
 self.addEventListener("install", event => {
