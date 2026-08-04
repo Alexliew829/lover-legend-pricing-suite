@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.6</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -860,9 +860,20 @@
       return shippingMY / (totalForeignCost / rate) * 100;
     }
 
+    function isDateLikeCorruptedNumber(value) {
+      if (typeof value !== "string") return false;
+      const text = value.trim();
+      return /^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(text) ||
+        /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(text);
+    }
+
     function parseCloudNumber(value) {
       if (typeof value === "number") {
         return Number.isFinite(value) ? value : 0;
+      }
+
+      if (isDateLikeCorruptedNumber(value)) {
+        return 0;
       }
 
       const normalized = String(value ?? "")
@@ -1147,22 +1158,36 @@
           source?.domesticMiscPercent
         );
 
+        const itemFixedInlandMiscPercent =
+          parseCloudNumber(source?.fixedInlandMiscPercent);
+
+        const itemHistoricalInlandMiscPercent =
+          parseCloudNumber(
+            source?.inlandMiscPercent ??
+            source?.inlandFeePercent ??
+            source?.domesticMiscPercent
+          );
+
+        const batchFixedInlandMiscPercent =
+          parseCloudNumber(batch?.fixedInlandMiscPercent);
+
+        const batchHistoricalInlandMiscPercent =
+          parseCloudNumber(batch?.inlandMiscPercent);
+
         const inlandMiscPercent =
-          hasFixedInlandMiscPercent
-            ? Math.max(
-                0,
-                parseCloudNumber(source.fixedInlandMiscPercent)
-              )
+          itemFixedInlandMiscPercent > 0
+            ? itemFixedInlandMiscPercent
             : (
-                hasBatchFixedInlandMiscPercent
-                  ? Math.max(
-                      0,
-                      parseCloudNumber(batch.fixedInlandMiscPercent)
-                    )
+                itemHistoricalInlandMiscPercent > 0
+                  ? itemHistoricalInlandMiscPercent
                   : (
-                      calculatedInlandMiscPercent > 0
-                        ? calculatedInlandMiscPercent
-                        : storedInlandMiscPercent
+                      batchFixedInlandMiscPercent > 0
+                        ? batchFixedInlandMiscPercent
+                        : (
+                            batchHistoricalInlandMiscPercent > 0
+                              ? batchHistoricalInlandMiscPercent
+                              : calculatedInlandMiscPercent
+                          )
                     )
               );
 
@@ -1189,66 +1214,41 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            const hasSourceFixedShippingRate =
-              source?.fixedShippingRate !== undefined &&
-              source?.fixedShippingRate !== null &&
-              String(source.fixedShippingRate).trim() !== "";
-
-            if (hasSourceFixedShippingRate) {
-              const fixedShippingRate =
-                parseCloudNumber(source.fixedShippingRate);
-
-              const historicalShippingRate =
-                parseCloudNumber(
-                  source?.shippingRate ??
-                  source?.overseasShippingRate
-                );
-
-              if (fixedShippingRate > 0) {
-                return fixedShippingRate;
-              }
-
-              if (historicalShippingRate > 0) {
-                return historicalShippingRate;
-              }
+            // V4.8: 产品 Item 是固定成本的第一资料来源。
+            // 只有 Item 没有有效比例时，才读取 Batch 或重新计算。
+            const itemFixedShippingRate =
+              parseCloudNumber(source?.fixedShippingRate);
+            if (itemFixedShippingRate > 0) {
+              return itemFixedShippingRate;
             }
 
-            const hasBatchFixedShippingRate =
-              batch?.fixedShippingRate !== undefined &&
-              batch?.fixedShippingRate !== null &&
-              String(batch.fixedShippingRate).trim() !== "";
-
-            if (hasBatchFixedShippingRate) {
-              const fixedShippingRate =
-                parseCloudNumber(batch.fixedShippingRate);
-
-              const historicalShippingRate =
-                parseCloudNumber(
-                  batch?.shippingRate ??
-                  batch?.overseasShippingRate
-                );
-
-              if (fixedShippingRate > 0) {
-                return fixedShippingRate;
-              }
-
-              if (historicalShippingRate > 0) {
-                return historicalShippingRate;
-              }
+            const itemHistoricalShippingRate =
+              parseCloudNumber(
+                source?.shippingRate ??
+                source?.overseasShippingRate
+              );
+            if (itemHistoricalShippingRate > 0) {
+              return itemHistoricalShippingRate;
             }
 
-            const batchShippingRate = batch
+            const batchFixedShippingRate =
+              parseCloudNumber(batch?.fixedShippingRate);
+            if (batchFixedShippingRate > 0) {
+              return batchFixedShippingRate;
+            }
+
+            const batchHistoricalShippingRate =
+              parseCloudNumber(
+                batch?.shippingRate ??
+                batch?.overseasShippingRate
+              );
+            if (batchHistoricalShippingRate > 0) {
+              return batchHistoricalShippingRate;
+            }
+
+            return batch
               ? getCloudBatchShippingRate(batch)
               : 0;
-
-            const storedImportShippingRate = parseCloudNumber(
-              source?.shippingRate ??
-              source?.overseasShippingRate
-            );
-
-            return batchShippingRate > 0
-              ? batchShippingRate
-              : storedImportShippingRate;
           })(),
           inlandMiscPercent,
           batchGoodsTotal: purchaseTotal,
@@ -1325,7 +1325,7 @@
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 14,
+            version: 18,
             exportedAt: new Date().toISOString(),
             records
           })
