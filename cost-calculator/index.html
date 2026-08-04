@@ -342,10 +342,56 @@
       }
 
       .result .entry {
-        font-size: 16px !important;
-        line-height: 1.25;
-        margin: 2px 0;
+        font-size: 19px !important;
+        line-height: 1.34;
+        margin: 3px 0;
       }
+
+      .result .entry:first-child {
+        font-size: 20px !important;
+      }
+
+      .import-product-options {
+        padding-top: 58px;
+      }
+
+      .mobile-product-search-wrap {
+        display: block;
+        position: fixed;
+        z-index: 100001;
+        top: calc(12vh + 8px);
+        left: 16px;
+        right: 16px;
+        padding: 0;
+        background: #fff;
+      }
+
+      .mobile-product-search {
+        width: 100%;
+        height: 46px;
+        min-height: 46px;
+        margin: 0;
+        padding: 8px 12px;
+        border: 2px solid #1e5631;
+        border-radius: 9px;
+        font-size: 18px;
+        font-weight: 700;
+        background: #fff;
+      }
+
+      .import-product-option strong {
+        font-size: 18px;
+        line-height: 1.25;
+      }
+
+      .import-product-option span {
+        font-size: 16px;
+        line-height: 1.35;
+      }
+    }
+
+    @media (min-width: 601px) {
+      .mobile-product-search-wrap { display: none; }
     }
 
 
@@ -356,7 +402,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1028,9 +1074,16 @@
     }
 
     function openImportProductOptions() {
-      renderImportProductOptions();
       const input = document.getElementById("importProductSearch");
       const options = document.getElementById("importProductOptions");
+      const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+      if (isMobile && input) {
+        input.readOnly = true;
+        input.blur();
+      }
+
+      renderImportProductOptions();
       if (options) options.hidden = false;
       if (input) input.setAttribute("aria-expanded", "true");
     }
@@ -1041,7 +1094,16 @@
       const status = document.getElementById("importProductStatus");
       if (!options || !status) return;
 
-      const keyword = String(searchInput?.value || "").trim();
+      const mobileSearchInput =
+        document.getElementById("mobileImportProductSearch");
+      const useMobileSearch =
+        window.matchMedia("(max-width: 600px)").matches &&
+        mobileSearchInput;
+      const keyword = String(
+        useMobileSearch
+          ? mobileSearchInput.value
+          : searchInput?.value || ""
+      ).trim();
       importProductRecords = readImportUnitPriceRecords();
       visibleImportProductRecords = importProductRecords.filter(record => {
         const searchable = [
@@ -1056,7 +1118,21 @@
         return unorderedImportProductMatch(searchable, keyword);
       });
 
-      options.innerHTML = visibleImportProductRecords.length
+      const mobileSearchMarkup =
+        window.matchMedia("(max-width: 600px)").matches
+          ? `<div class="mobile-product-search-wrap">
+               <input
+                 id="mobileImportProductSearch"
+                 class="mobile-product-search"
+                 type="search"
+                 autocomplete="off"
+                 placeholder="输入产品名称搜索"
+                 value="${String(keyword).replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" />
+             </div>`
+          : "";
+
+      options.innerHTML = mobileSearchMarkup + (
+        visibleImportProductRecords.length
         ? visibleImportProductRecords.map((record, index) => {
             const name = String(record.productName || "未命名产品");
             const number = String(record.importNumber || "无进口编号");
@@ -1076,7 +1152,8 @@
               <span>${number} · 成本 ${currency} ${pricingUnitPrice} · 原单价 ${currency} ${originalUnitPrice} · 平均成本 ${averageCost}${freight}</span>
             </button>`;
           }).join("")
-        : '<div class="import-product-empty">没有符合的产品</div>';
+        : '<div class="import-product-empty">没有符合的产品</div>'
+      );
 
       status.classList.toggle("error", importProductRecords.length === 0);
       status.textContent = !importProductRecords.length
@@ -1583,17 +1660,27 @@ window.onload = () => {
   const importProductOptions =
     document.getElementById("importProductOptions");
 
-  importProductSearch?.addEventListener("focus", openImportProductOptions);
-  importProductSearch?.addEventListener("click", openImportProductOptions);
-  importProductSearch?.addEventListener("input", () => {
-    renderImportProductOptions();
+  if (window.matchMedia("(max-width: 600px)").matches && importProductSearch) {
+    importProductSearch.readOnly = true;
+  } else {
+    importProductSearch?.addEventListener("focus", openImportProductOptions);
+    importProductSearch?.addEventListener("input", () => {
+      renderImportProductOptions();
+      openImportProductOptions();
+    });
+  }
+
+  importProductSearch?.addEventListener("click", event => {
+    event.preventDefault();
     openImportProductOptions();
   });
 
   importProductToggle?.addEventListener("click", event => {
     event.preventDefault();
     if (importProductOptions?.hidden) {
-      importProductSearch?.focus();
+      if (!window.matchMedia("(max-width: 600px)").matches) {
+        importProductSearch?.focus();
+      }
       openImportProductOptions();
     } else {
       closeImportProductOptions();
@@ -1628,6 +1715,21 @@ window.onload = () => {
     "click",
     chooseImportProduct
   );
+
+  importProductOptions?.addEventListener("input", event => {
+    if (event.target.id !== "mobileImportProductSearch") return;
+    const cursorPosition = event.target.selectionStart;
+    renderImportProductOptions();
+    requestAnimationFrame(() => {
+      const input = document.getElementById("mobileImportProductSearch");
+      if (input) {
+        input.focus();
+        if (Number.isFinite(cursorPosition)) {
+          input.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      }
+    });
+  });
 
   document.addEventListener("pointerdown", event => {
     if (!event.target.closest(".import-product-picker")) {
