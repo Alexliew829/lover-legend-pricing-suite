@@ -183,7 +183,7 @@
     .source-cost-row {
       display: flex;
       gap: 8px;
-      align-items: flex-end;
+      align-items: flex-start;
     }
 
     .source-cost-row .import-product-picker,
@@ -199,13 +199,55 @@
     }
 
     @media (max-width: 600px) {
-      .source-cost-row { gap: 6px; }
+      .source-cost-row {
+        gap: 8px;
+        align-items: flex-start;
+      }
+
       .source-cost-row .import-product-picker,
       .source-cost-row .import-cost-field {
         flex: 1 1 0;
+        width: calc(50% - 4px);
         min-width: 0;
       }
-      .import-product-search { font-size: 14px; }
+
+      .source-cost-row label {
+        min-height: 46px;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .import-product-search {
+        font-size: 14px;
+        min-height: 42px;
+      }
+
+      .import-product-toggle {
+        height: 40px;
+      }
+
+      .import-product-options {
+        position: fixed;
+        z-index: 100000;
+        top: 18vh;
+        left: 14px;
+        right: 14px;
+        width: auto;
+        max-height: 62vh;
+        border-radius: 12px;
+        box-shadow: 0 12px 34px rgba(0,0,0,.28);
+        overscroll-behavior: contain;
+      }
+
+      .import-product-option {
+        min-height: 58px;
+        padding: 11px 12px !important;
+        touch-action: manipulation;
+      }
+
+      .import-product-status {
+        margin-top: 4px;
+      }
     }
 
 
@@ -216,7 +258,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.9</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.0</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -239,7 +281,6 @@
         <button id="importProductToggle" class="import-product-toggle" type="button" aria-label="展开产品">▼</button>
         <div id="importProductOptions" class="import-product-options" role="listbox" hidden></div>
       </div>
-      <div id="importProductStatus" class="import-product-status"></div>
     </div>
 
     <div class="import-cost-field">
@@ -259,6 +300,7 @@
       <input id="price" type="hidden" value="" />
     </div>
   </div>
+  <div id="importProductStatus" class="import-product-status"></div>
 
   <div class="row currency-inland-row">
     <div>
@@ -1196,12 +1238,23 @@ window.onload = () => {
     }
   });
 
-  importProductOptions?.addEventListener("click", event => {
+  const chooseImportProduct = event => {
     const option = event.target.closest(".import-product-option");
     if (!option) return;
-    const record = visibleImportProductRecords[Number(option.dataset.recordIndex)];
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const record =
+      visibleImportProductRecords[Number(option.dataset.recordIndex)];
+
     applySelectedImportProduct(record);
-  });
+  };
+
+  importProductOptions?.addEventListener(
+    "pointerdown",
+    chooseImportProduct
+  );
 
   document.addEventListener("pointerdown", event => {
     if (!event.target.closest(".import-product-picker")) {
@@ -1233,6 +1286,19 @@ window.onload = () => {
       clearCalculationResult(false);
     });
   }
+
+  const refreshImportProducts = () => {
+    renderImportProductOptions();
+    if (!document.getElementById("importProductOptions")?.hidden) {
+      openImportProductOptions();
+    }
+  };
+
+  window.addEventListener("pageshow", refreshImportProducts);
+  window.addEventListener("focus", refreshImportProducts);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshImportProducts();
+  });
 };
   </script>
 </body>
