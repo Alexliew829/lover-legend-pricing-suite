@@ -95,6 +95,7 @@
       font-size: 15px;
     }
 
+    .import-product-picker input,
     .import-product-picker select {
       width: 100%;
       min-height: 40px;
@@ -104,6 +105,15 @@
       background: #fff;
       font-size: 15px;
       color: #111;
+    }
+
+
+    .import-product-picker input {
+      margin-bottom: 4px;
+    }
+
+    .import-product-picker input::placeholder {
+      color: #888;
     }
 
     .import-product-status {
@@ -125,7 +135,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -133,7 +143,13 @@
 
 
   <div class="import-product-picker">
-    <label for="importProductSelect">从进口成本与库存系统选择产品：</label>
+    <label for="importProductSearch">从进口成本与库存系统选择产品：</label>
+    <input
+      id="importProductSearch"
+      type="search"
+      autocomplete="off"
+      placeholder="输入关键字搜索，例如：高提根 / 提根高"
+    />
     <select id="importProductSelect">
       <option value="">请选择产品（原外币单价）</option>
     </select>
@@ -447,43 +463,104 @@
       });
     }
 
+    function normalizeImportProductSearchText(value) {
+      return String(value || "")
+        .normalize("NFKC")
+        .toLocaleLowerCase()
+        .replace(/[\s\u3000\-_./\\,，、:：;；()（）[\]【】{}"'`~!！?？@#$%^&*+=|<>]+/g, "");
+    }
+
+    function unorderedImportProductMatch(sourceValue, queryValue) {
+      const source = normalizeImportProductSearchText(sourceValue);
+      const query = normalizeImportProductSearchText(queryValue);
+
+      if (!query) return true;
+      if (source.includes(query)) return true;
+
+      const counts = new Map();
+      Array.from(source).forEach(character => {
+        counts.set(character, (counts.get(character) || 0) + 1);
+      });
+
+      return Array.from(query).every(character => {
+        const count = counts.get(character) || 0;
+        if (count < 1) return false;
+        counts.set(character, count - 1);
+        return true;
+      });
+    }
+
+    function getImportProductRecordKey(record) {
+      return [
+        String(record?.productName || ""),
+        String(record?.importNumber || ""),
+        String(record?.currency || ""),
+        String(record?.unitPrice || "")
+      ].join("|");
+    }
+
     function renderImportProductOptions() {
+      const searchInput = document.getElementById("importProductSearch");
       const select = document.getElementById("importProductSelect");
       const status = document.getElementById("importProductStatus");
       if (!select || !status) return;
 
       const currentValue = select.value;
+      const keyword = String(searchInput?.value || "").trim();
       const records = readImportUnitPriceRecords();
+      const filteredRecords = records.filter(record => {
+        const searchable = [
+          record.productName,
+          record.importNumber,
+          record.currency,
+          record.unitPrice
+        ].join(" ");
+
+        return unorderedImportProductMatch(searchable, keyword);
+      });
 
       select.innerHTML =
         '<option value="">请选择产品（原外币单价）</option>' +
-        records.map((record, index) => {
+        filteredRecords.map(record => {
           const name = String(record.productName || "未命名产品");
           const number = String(record.importNumber || "无进口编号");
           const currency = String(record.currency || "").toUpperCase();
           const unitPrice = formatOriginalUnitPrice(record.unitPrice);
+          const key = encodeURIComponent(getImportProductRecordKey(record));
 
-          return `<option value="${index}">
-            ${name} · ${number} · ${currency} ${unitPrice}
-          </option>`;
+          return `<option value="${key}">${name} · ${number} · ${currency} ${unitPrice}</option>`;
         }).join("");
 
-      if (currentValue && Number(currentValue) < records.length) {
+      if (
+        currentValue &&
+        Array.from(select.options).some(option => option.value === currentValue)
+      ) {
         select.value = currentValue;
       }
 
       status.classList.toggle("error", records.length === 0);
-      status.textContent = records.length
-        ? `已读取 ${records.length} 笔原外币单价`
-        : "暂无资料，请先打开进口成本与库存系统并完成同步";
+
+      if (!records.length) {
+        status.textContent =
+          "暂无资料，请先打开进口成本与库存系统并完成同步";
+        return;
+      }
+
+      status.classList.remove("error");
+      status.textContent = keyword
+        ? `找到 ${filteredRecords.length} / ${records.length} 笔原外币单价`
+        : `已读取 ${records.length} 笔原外币单价`;
     }
 
     function applySelectedImportProduct() {
       const select = document.getElementById("importProductSelect");
       if (!select || select.value === "") return;
 
+      const selectedKey = decodeURIComponent(select.value);
       const records = readImportUnitPriceRecords();
-      const record = records[Number(select.value)];
+      const record = records.find(item =>
+        getImportProductRecordKey(item) === selectedKey
+      );
       if (!record) return;
 
       const priceInput = document.getElementById("price_display");
@@ -890,8 +967,19 @@ window.onload = () => {
 
   renderImportProductOptions();
 
+  const importProductSearch =
+    document.getElementById("importProductSearch");
   const importProductSelect =
     document.getElementById("importProductSelect");
+
+  importProductSearch?.addEventListener(
+    "input",
+    renderImportProductOptions
+  );
+
+  importProductSearch?.addEventListener("search", () => {
+    renderImportProductOptions();
+  });
 
   importProductSelect?.addEventListener(
     "change",

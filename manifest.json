@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite",
+  "name": "Lover Legend Pricing Suite V1.4",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -7,7 +7,16 @@
   "background_color": "#eef2ec",
   "theme_color": "#eef2ec",
   "icons": [
-    { "src": "bonsai-price-calculator/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "bonsai-price-calculator/images/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+    {
+      "src": "bonsai-price-calculator/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "bonsai-price-calculator/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "description": "Cost, sales and bonsai price calculators with import product search"
 }

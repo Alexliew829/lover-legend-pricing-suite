@@ -7,4 +7,4 @@ Combined GitHub Pages application containing:
 
 The two calculator folders are preserved from the supplied original ZIP files. The root page only controls desktop/mobile layout and iframe height.
 
-Version 1.2 Stable
+Version 1.4 Search
