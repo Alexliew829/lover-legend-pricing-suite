@@ -180,6 +180,37 @@
 
     .import-product-status.error { color: #b22222; }
 
+    .source-cost-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .source-cost-row .import-product-picker {
+      flex: 1.35;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .source-cost-row .import-cost-field {
+      flex: 0.65;
+      min-width: 175px;
+    }
+
+    .currency-freight-row > div:nth-child(1) { flex: 0.72; }
+    .currency-freight-row > div:nth-child(2) { flex: 0.9; }
+    .currency-freight-row > div:nth-child(3) { flex: 1.15; }
+
+    @media (max-width: 600px) {
+      .source-cost-row { gap: 5px; }
+      .source-cost-row .import-product-picker { flex: 1.15; }
+      .source-cost-row .import-cost-field {
+        flex: 0.85;
+        min-width: 135px;
+      }
+      .import-product-search { font-size: 14px; }
+    }
+
 
   </style>
 </head>
@@ -188,74 +219,114 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V2.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
   </p>
 
-  <div class="import-product-picker">
-    <label for="importProductSearch">从进口成本与库存系统选择产品：</label>
-    <div class="import-product-combobox">
-      <input
-        id="importProductSearch"
-        class="import-product-search"
-        type="search"
-        autocomplete="off"
-        placeholder="输入关键字搜索，或点击右边箭头选择"
-        aria-autocomplete="list"
-        aria-controls="importProductOptions"
-        aria-expanded="false"
-      />
-      <button id="importProductToggle" class="import-product-toggle" type="button" aria-label="展开产品">▼</button>
-      <div id="importProductOptions" class="import-product-options" role="listbox" hidden></div>
+  <div class="source-cost-row">
+    <div class="import-product-picker">
+      <label for="importProductSearch">从进口系统选择产品：</label>
+      <div class="import-product-combobox">
+        <input
+          id="importProductSearch"
+          class="import-product-search"
+          type="search"
+          autocomplete="off"
+          placeholder="搜索或选择产品"
+          aria-autocomplete="list"
+          aria-controls="importProductOptions"
+          aria-expanded="false"
+        />
+        <button id="importProductToggle" class="import-product-toggle" type="button" aria-label="展开产品">▼</button>
+        <div id="importProductOptions" class="import-product-options" role="listbox" hidden></div>
+      </div>
+      <div id="importProductStatus" class="import-product-status"></div>
     </div>
-    <div id="importProductStatus" class="import-product-status"></div>
+
+    <div class="import-cost-field">
+      <label for="price_display" style="display:flex; align-items:center; gap:6px;">
+        <span>盆栽进口成本：</span>
+        <button type="button" class="mini-btn" onclick="toggleCalc(true)">🧮</button>
+      </label>
+      <input
+        id="price_display"
+        onblur="formatDisplayPrice()"
+        oninput="updateRawPrice()"
+        type="text"
+        inputmode="decimal"
+        maxlength="10"
+        placeholder="000,000.00"
+      />
+      <input id="price" type="hidden" value="" />
+    </div>
+  </div>
+
+  <div class="row currency-freight-row">
+    <div>
+      <label for="currency">货币：</label>
+      <select id="currency" onchange="setRate()">
+        <option selected value="CNY">CNY</option>
+        <option value="NTD">NTD</option>
+        <option value="VND">VND</option>
+        <option value="IDR">IDR</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="rate">汇率：</label>
+      <input id="rate" type="text" value="1.60" />
+    </div>
+
+    <div>
+      <label for="freight">海外运费比例：</label>
+      <input
+        id="freight"
+        type="text"
+        inputmode="decimal"
+        maxlength="6"
+        value="20.00%"
+        onblur="normalizeFreightInput()"
+      />
+    </div>
   </div>
 
   <div class="row">
-  <div style="flex:2;">
-    <label for="price_display" style="display:flex; align-items:center; gap:8px;">
-      <span>盆栽进口成本：</span>
-      <button type="button" class="mini-btn" onclick="toggleCalc(true)">🧮</button>
-    </label>
+    <div>
+      <label for="inlandMisc">内地杂费：</label>
+      <input
+        id="inlandMisc"
+        type="text"
+        inputmode="decimal"
+        value="0"
+        onblur="formatStandardCostInput(this)"
+      />
+    </div>
 
-    <input
-      id="price_display"
-      onblur="formatDisplayPrice()"
-      oninput="updateRawPrice()"
-      type="text"
-      placeholder="如 1,000.00"
-    />
-    <input id="price" type="hidden" value="" />
-  </div>
-
-  <div style="flex:0.8;">
-    <label for="currency">货币：</label>
-    <select id="currency" onchange="setRate()">
-      <option selected value="CNY">CNY</option>
-      <option value="NTD">NTD</option>
-      <option value="VND">VND</option>
-      <option value="IDR">IDR</option>
-    </select>
+    <div>
+      <label for="malaysiaExtra">大马费用：</label>
+      <input
+        id="malaysiaExtra"
+        type="text"
+        inputmode="decimal"
+        value="0"
+        onblur="formatStandardCostInput(this)"
+      />
+    </div>
   </div>
 
-  <div style="flex:1;">
-    <label for="rate">汇率：</label>
-    <input id="rate" type="text" value="1.60" />
-  </div>
-</div>
-<div class="row">
-  <div>
-    <label for="freight">海外运费比例：</label>
-    <input id="freight" type="text" value="20%" />
-  </div>
+  <div class="row">
+    <div>
+      <label for="pot">花盆成本：</label>
+      <input id="pot" type="text" value="0" />
+    </div>
 
-  <div>
-    <label for="pot">花盆成本：</label>
-    <input id="pot" type="text" value="0" />
+    <div>
+      <label style="visibility:hidden;">占位</label>
+      <input type="text" value="0" style="visibility:hidden;" tabindex="-1" aria-hidden="true" />
+    </div>
   </div>
-</div>
 
 <div class="row">
   <div>
@@ -641,10 +712,17 @@
       const currencyInput = document.getElementById("currency");
       const rateInput = document.getElementById("rate");
       const freightInput = document.getElementById("freight");
+      const inlandMiscInput = document.getElementById("inlandMisc");
+      const malaysiaExtraInput = document.getElementById("malaysiaExtra");
       const localInput = document.getElementById("local");
       const currency = String(record.currency || "").toUpperCase();
-      const unitPrice = Number(
-        record.pricingUnitPrice || record.unitPrice
+      const unitPrice = Number(record.unitPrice);
+      const inlandMiscUnit = Number(
+        record.inlandMiscUnitPrice ??
+        (
+          Number(record.pricingUnitPrice || record.unitPrice) -
+          Number(record.unitPrice)
+        )
       );
       const recordRate = Number(record.rate);
       const shippingRate = Number(record.shippingRate);
@@ -676,6 +754,17 @@
         freightInput.value = `${Number(finalFreight || 0).toFixed(2)}%`;
       }
 
+      if (inlandMiscInput) {
+        inlandMiscInput.value =
+          Number.isFinite(inlandMiscUnit) && inlandMiscUnit > 0
+            ? inlandMiscUnit.toFixed(2)
+            : "0.00";
+      }
+
+      if (malaysiaExtraInput) {
+        malaysiaExtraInput.value = "0.00";
+      }
+
       if (localInput) localInput.value = defaultLocal[currency] ?? 0;
 
       clearCalculationResult(true);
@@ -686,8 +775,8 @@
       if (status) {
         status.classList.remove("error");
         status.textContent =
-          `${record.productName} · 计算器成本 ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
-          ` · 原购买单价 ${currency} ${formatOriginalUnitPrice(record.unitPrice)}` +
+          `${record.productName} · 原购买单价 ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
+          ` · 内地杂费 ${currency} ${formatOriginalUnitPrice(inlandMiscUnit)}` +
           ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}% 已带入，可继续手动修改`;
       }
@@ -793,7 +882,7 @@
     function setRate() {
       const currency = document.getElementById('currency').value;
       document.getElementById('rate').value = defaultRates[currency].toFixed(6);
-      document.getElementById('freight').value = defaultFreight[currency];
+      document.getElementById('freight').value = `${(parseFloat(defaultFreight[currency]) || 0).toFixed(2)}%`;
       document.getElementById('local').value = defaultLocal[currency];
       autoSetPotVND();
     }
@@ -855,10 +944,44 @@ function formatActualPrice() {
     input.value = value.toFixed(2);
   }
 }
+    function formatStandardCostInput(input) {
+      if (!input) return;
+
+      const value = parseFloat(
+        String(input.value || "")
+          .replace(/,/g, "")
+          .replace(/[^\d.]/g, "")
+      );
+
+      input.value = Number.isFinite(value)
+        ? value.toFixed(2)
+        : "0";
+    }
+
+    function normalizeFreightInput() {
+      const input = document.getElementById("freight");
+      if (!input) return;
+
+      let value = parseFloat(
+        String(input.value || "")
+          .replace("%", "")
+          .replace(/,/g, "")
+          .replace(/[^\d.]/g, "")
+      );
+
+      if (!Number.isFinite(value)) value = 0;
+      value = Math.min(88.88, Math.max(0, value));
+      input.value = `${value.toFixed(2)}%`;
+    }
+
     function calculate() {
       const price = parseFloat(document.getElementById('price').value);
       const freightInput = document.getElementById('freight').value.trim();
       const rate = parseFloat(document.getElementById('rate').value);
+      const inlandMisc =
+        parseFloat(document.getElementById('inlandMisc').value) || 0;
+      const malaysiaExtra =
+        parseFloat(document.getElementById('malaysiaExtra').value) || 0;
       const pot = parseFloat(document.getElementById('pot').value) || 0;
       const moss = parseFloat(document.getElementById('moss').value) || 0;
       const local = parseFloat(document.getElementById('local').value) || 0;
@@ -878,7 +1001,12 @@ function formatActualPrice() {
         : freightInput.includes('%')
           ? (parseFloat(freightInput.replace('%', '')) / 100)
           : (parseFloat(freightInput) / 100);
-const rmCost = (price / rate) * (1 + freight) + pot + moss + local;
+const rmCost =
+  ((price + inlandMisc) / rate) * (1 + freight) +
+  pot +
+  moss +
+  local +
+  malaysiaExtra;
 
 let receivedAmount = 0;
 
@@ -1109,7 +1237,7 @@ window.onload = () => {
     }
   });
 
-  ['currency', 'rate', 'freight', 'pot', 'moss', 'local']
+  ['currency', 'rate', 'freight', 'inlandMisc', 'malaysiaExtra', 'pot', 'moss', 'local']
     .forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
