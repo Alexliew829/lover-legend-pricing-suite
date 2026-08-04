@@ -1,3 +1,3 @@
 # CostNSalesPrice
 
-Version V3.4 — mobile stacked layout; version references synchronized.
+Version V3.5 — mobile stacked layout; version references synchronized.
