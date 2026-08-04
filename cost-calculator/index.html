@@ -355,6 +355,10 @@
         padding-top: 58px;
       }
 
+      .import-product-list {
+        min-height: 1px;
+      }
+
       .mobile-product-search-wrap {
         display: block;
         position: fixed;
@@ -402,7 +406,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1133,22 +1137,61 @@
       if (input) input.setAttribute("aria-expanded", "true");
     }
 
+    function ensureMobileImportSearchUI(options) {
+      if (!window.matchMedia("(max-width: 600px)").matches) {
+        return options;
+      }
+
+      let searchWrap =
+        options.querySelector(".mobile-product-search-wrap");
+      let searchInput =
+        document.getElementById("mobileImportProductSearch");
+      let list =
+        options.querySelector(".import-product-list");
+
+      if (!searchWrap) {
+        searchWrap = document.createElement("div");
+        searchWrap.className = "mobile-product-search-wrap";
+
+        searchInput = document.createElement("input");
+        searchInput.id = "mobileImportProductSearch";
+        searchInput.className = "mobile-product-search";
+        searchInput.type = "text";
+        searchInput.autocomplete = "off";
+        searchInput.autocapitalize = "off";
+        searchInput.spellcheck = false;
+        searchInput.placeholder = "输入中文或产品编号搜索";
+
+        searchWrap.appendChild(searchInput);
+        options.appendChild(searchWrap);
+      }
+
+      if (!list) {
+        list = document.createElement("div");
+        list.className = "import-product-list";
+        options.appendChild(list);
+      }
+
+      return list;
+    }
+
     function renderImportProductOptions() {
       const searchInput = document.getElementById("importProductSearch");
       const options = document.getElementById("importProductOptions");
       const status = document.getElementById("importProductStatus");
       if (!options || !status) return;
 
+      const isMobile =
+        window.matchMedia("(max-width: 600px)").matches;
       const mobileSearchInput =
         document.getElementById("mobileImportProductSearch");
-      const useMobileSearch =
-        window.matchMedia("(max-width: 600px)").matches &&
-        mobileSearchInput;
+
       const keyword = String(
-        useMobileSearch
+        isMobile && mobileSearchInput
           ? mobileSearchInput.value
           : searchInput?.value || ""
       ).trim();
+
       importProductRecords = readImportUnitPriceRecords();
       visibleImportProductRecords = importProductRecords.filter(record => {
         const searchable = [
@@ -1161,57 +1204,55 @@
           record.shippingRate,
           record.inlandMiscPercent
         ].join(" ");
+
         return unorderedImportProductMatch(searchable, keyword);
       });
 
-      const mobileSearchMarkup =
-        window.matchMedia("(max-width: 600px)").matches
-          ? `<div class="mobile-product-search-wrap">
-               <input
-                 id="mobileImportProductSearch"
-                 class="mobile-product-search"
-                 type="text"
-                 autocomplete="off"
-                 autocapitalize="off"
-                 spellcheck="false"
-                 placeholder="输入中文或产品编号搜索"
-                 value="${String(keyword).replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" />
-             </div>`
-          : "";
+      const listTarget = isMobile
+        ? ensureMobileImportSearchUI(options)
+        : options;
 
-      options.innerHTML = mobileSearchMarkup + (
-        visibleImportProductRecords.length
+      const previousScrollTop = listTarget.scrollTop;
+
+      listTarget.innerHTML = visibleImportProductRecords.length
         ? visibleImportProductRecords.map((record, index) => {
             const name = String(record.productName || "未命名产品");
             const number = String(record.importNumber || "无进口编号");
             const currency = String(record.currency || "").toUpperCase();
             const originalUnitPrice =
               formatOriginalUnitPrice(record.unitPrice);
-            const pricingUnitPrice =
-              formatOriginalUnitPrice(
-                record.pricingUnitPrice || record.unitPrice
-              );
-            const averageCost = formatAverageCostRM(record.averageCostRM);
+            const averageCost =
+              formatAverageCostRM(record.averageCostRM);
             const inland =
-              ` · 内地杂费 ${Number(record.inlandMiscPercent || 0).toFixed(2)}%`;
+              ` · 内地杂费 ${Number(
+                record.inlandMiscPercent || 0
+              ).toFixed(2)}%`;
             const freight =
-              ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%`;
+              ` · 海外运费 ${Number(
+                record.shippingRate || 0
+              ).toFixed(2)}%`;
 
             return `<button type="button" class="import-product-option" role="option" data-record-index="${index}">
               <strong>${name}</strong>
               <span>${number} · 原单价 ${currency} ${originalUnitPrice} · 平均成本 ${averageCost}${inland}${freight}</span>
             </button>`;
           }).join("")
-        : '<div class="import-product-empty">没有符合的产品</div>'
+        : '<div class="import-product-empty">没有符合的产品</div>';
+
+      listTarget.scrollTop = previousScrollTop;
+
+      status.classList.toggle(
+        "error",
+        importProductRecords.length === 0
       );
 
-      status.classList.toggle("error", importProductRecords.length === 0);
       status.textContent = !importProductRecords.length
         ? "暂无资料，请先打开进口成本与库存系统并完成同步"
         : keyword
           ? `找到 ${visibleImportProductRecords.length} / ${importProductRecords.length} 笔产品资料`
           : `已读取 ${importProductRecords.length} 笔产品资料`;
     }
+
 
     function applySelectedImportProduct(record) {
       if (!record) return;
@@ -1770,42 +1811,43 @@ window.onload = () => {
   );
 
   let mobileImportSearchComposing = false;
+  let mobileImportSearchTimer = 0;
 
-  importProductOptions?.addEventListener("compositionstart", event => {
-    if (event.target.id !== "mobileImportProductSearch") return;
-    mobileImportSearchComposing = true;
-  });
+  importProductOptions?.addEventListener(
+    "compositionstart",
+    event => {
+      if (event.target.id !== "mobileImportProductSearch") return;
+      mobileImportSearchComposing = true;
+    }
+  );
 
-  importProductOptions?.addEventListener("compositionend", event => {
-    if (event.target.id !== "mobileImportProductSearch") return;
-    mobileImportSearchComposing = false;
-    renderImportProductOptions();
-
-    requestAnimationFrame(() => {
-      document.getElementById("mobileImportProductSearch")?.focus();
-    });
-  });
+  importProductOptions?.addEventListener(
+    "compositionend",
+    event => {
+      if (event.target.id !== "mobileImportProductSearch") return;
+      mobileImportSearchComposing = false;
+      clearTimeout(mobileImportSearchTimer);
+      mobileImportSearchTimer = window.setTimeout(() => {
+        renderImportProductOptions();
+      }, 80);
+    }
+  );
 
   importProductOptions?.addEventListener("input", event => {
     if (event.target.id !== "mobileImportProductSearch") return;
     if (mobileImportSearchComposing || event.isComposing) return;
 
-    const cursorPosition = event.target.selectionStart;
-    renderImportProductOptions();
-
-    requestAnimationFrame(() => {
-      const input = document.getElementById("mobileImportProductSearch");
-      if (input) {
-        input.focus();
-        if (Number.isFinite(cursorPosition)) {
-          input.setSelectionRange(cursorPosition, cursorPosition);
-        }
-      }
-    });
+    clearTimeout(mobileImportSearchTimer);
+    mobileImportSearchTimer = window.setTimeout(() => {
+      renderImportProductOptions();
+    }, 140);
   });
 
   document.addEventListener("pointerdown", event => {
-    if (!event.target.closest(".import-product-picker")) {
+    const insidePicker = event.target.closest(".import-product-picker");
+    const insideOptions = event.target.closest("#importProductOptions");
+
+    if (!insidePicker && !insideOptions) {
       closeImportProductOptions();
     }
   });
@@ -1836,8 +1878,17 @@ window.onload = () => {
   }
 
   const refreshImportProducts = () => {
+    const mobileSearch =
+      document.getElementById("mobileImportProductSearch");
+    const isTyping =
+      mobileSearch &&
+      document.activeElement === mobileSearch;
+
+    if (isTyping) return;
+
     refreshImportProductsFromCloud();
     renderImportProductOptions();
+
     if (!document.getElementById("importProductOptions")?.hidden) {
       openImportProductOptions();
     }
