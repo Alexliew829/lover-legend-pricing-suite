@@ -299,7 +299,7 @@
 
       .import-product-options {
         position: fixed;
-        z-index: 100000;
+        z-index: 100010;
         top: 12vh;
         left: 8px;
         right: 8px;
@@ -362,7 +362,7 @@
       .mobile-product-backdrop {
         display: block;
         position: fixed;
-        z-index: 99998;
+        z-index: 99990;
         inset: 0;
         background: rgba(0, 0, 0, 0.18);
         touch-action: none;
@@ -371,7 +371,7 @@
       .mobile-product-search-wrap {
         display: block;
         position: fixed;
-        z-index: 100001;
+        z-index: 100020;
         top: calc(12vh + 8px);
         left: 16px;
         right: 16px;
@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.9</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.0</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1166,8 +1166,24 @@
       }
 
       renderImportProductOptions();
+
+      if (isMobile && !document.getElementById("mobileProductBackdrop")) {
+        const backdrop = document.createElement("div");
+        backdrop.id = "mobileProductBackdrop";
+        backdrop.className = "mobile-product-backdrop";
+        document.body.appendChild(backdrop);
+      }
+
       if (options) options.hidden = false;
       if (input) input.setAttribute("aria-expanded", "true");
+
+      if (isMobile) {
+        requestAnimationFrame(() => {
+          const mobileSearch =
+            document.getElementById("mobileImportProductSearch");
+          mobileSearch?.focus({ preventScroll: true });
+        });
+      }
     }
 
     function ensureMobileImportSearchUI(options) {
@@ -1181,13 +1197,6 @@
         document.getElementById("mobileImportProductSearch");
       let list =
         options.querySelector(".import-product-list");
-
-      if (!document.getElementById("mobileProductBackdrop")) {
-        const backdrop = document.createElement("div");
-        backdrop.id = "mobileProductBackdrop";
-        backdrop.className = "mobile-product-backdrop";
-        document.body.appendChild(backdrop);
-      }
 
       if (!searchWrap) {
         searchWrap = document.createElement("div");
@@ -1941,7 +1950,10 @@ window.onload = () => {
   });
 
   document.addEventListener("click", event => {
-    if (event.target.id === "mobileProductClose") {
+    if (
+      event.target.id === "mobileProductClose" ||
+      event.target.id === "mobileProductBackdrop"
+    ) {
       event.preventDefault();
       closeImportProductOptions();
     }
@@ -1989,7 +2001,12 @@ window.onload = () => {
     }
   };
 
-  window.addEventListener("pageshow", refreshImportProducts);
+  window.addEventListener("pageshow", () => {
+    document.getElementById("mobileProductBackdrop")?.remove();
+    const options = document.getElementById("importProductOptions");
+    if (options) options.hidden = true;
+    refreshImportProducts();
+  });
   window.addEventListener("focus", refreshImportProducts);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshImportProducts();
