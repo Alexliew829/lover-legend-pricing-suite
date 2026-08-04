@@ -1,10 +1,10 @@
-const CACHE = "lover-legend-pricing-suite-v3.0-picker-click-fix";
+const CACHE = "lover-legend-pricing-suite-v3.1-flat-click-fix";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html",
-  "./bonsai-price-calculator/index.html"
+  "./cost-calculator/index.html?v=4.1-click-fix",
+  "./bonsai-price-calculator/index.html?v=3.1"
 ];
 
 self.addEventListener("install", event => {
