@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -769,8 +769,20 @@
       "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
 
     function getCloudBatchShippingRate(batch) {
-      const shippingMY = parseCloudNumber(batch?.shippingMY);
-      const rate = parseCloudNumber(batch?.rate);
+      const shippingMY = parseCloudNumber(
+        batch?.shippingMY ??
+        batch?.overseasShippingMY ??
+        batch?.overseasFreightMY ??
+        batch?.shippingCostMY ??
+        batch?.malaysiaShipping ??
+        0
+      );
+
+      const rate = parseCloudNumber(
+        batch?.rate ??
+        batch?.exchangeRate ??
+        0
+      );
 
       if (shippingMY <= 0 || rate <= 0) return 0;
 
@@ -914,7 +926,49 @@
               Math.abs(itemPrice - unitPrice) < 0.000001;
           });
 
-          const goodsTotal = getBatchItemsGoodsTotal(batch);
+          const goodsTotal =
+            parseCloudNumber(
+              batch?.foreignTotal ??
+              batch?.totalGoodsForeign ??
+              batch?.totalPurchaseForeign ??
+              batch?.goodsForeignTotal
+            ) || getBatchItemsGoodsTotal(batch);
+
+          const shippingMY = parseCloudNumber(
+            batch?.shippingMY ??
+            batch?.overseasShippingMY ??
+            batch?.overseasFreightMY ??
+            batch?.shippingCostMY ??
+            batch?.malaysiaShipping
+          );
+
+          const rate = parseCloudNumber(
+            batch?.rate ??
+            batch?.exchangeRate
+          );
+
+          const inlandTransport = parseCloudNumber(
+            batch?.chinaTransportCost ??
+            batch?.domesticTransportCost ??
+            batch?.inlandTransportCost ??
+            batch?.localTransportCost ??
+            batch?.chinaFreight
+          );
+
+          const matchingPotCost = parseCloudNumber(
+            batch?.potCost ??
+            batch?.matchingPotCost ??
+            batch?.pairedPotCost ??
+            batch?.potTotalCost ??
+            batch?.potMatchingCost
+          );
+
+          const dataScore =
+            Number(goodsTotal > 0) +
+            Number(rate > 0) +
+            Number(shippingMY > 0) +
+            Number(inlandTransport > 0 || matchingPotCost > 0);
+
           const updatedAt = Date.parse(
             batch?.updatedAt || batch?.createdAt || ""
           ) || 0;
@@ -923,13 +977,14 @@
             batch,
             exactItem,
             goodsTotal,
+            dataScore,
             updatedAt
           };
         });
 
         scored.sort((a, b) =>
           Number(b.exactItem) - Number(a.exactItem) ||
-          Number(b.goodsTotal > 0) - Number(a.goodsTotal > 0) ||
+          b.dataScore - a.dataScore ||
           b.updatedAt - a.updatedAt
         );
 
@@ -1029,10 +1084,21 @@
 
         // 内地杂费比例 =
         // （内地运输＋打木架＋搭配花盆费用）÷ 整批货款总额
-        const inlandMiscPercent =
+        const calculatedInlandMiscPercent =
           purchaseTotal > 0
             ? inlandCost / purchaseTotal * 100
             : 0;
+
+        const storedInlandMiscPercent = parseCloudNumber(
+          source?.inlandMiscPercent ??
+          source?.inlandFeePercent ??
+          source?.domesticMiscPercent
+        );
+
+        const inlandMiscPercent =
+          calculatedInlandMiscPercent > 0
+            ? calculatedInlandMiscPercent
+            : storedInlandMiscPercent;
 
         records.push({
           id: String(source?.id || key),
@@ -1044,9 +1110,22 @@
           currency,
           rate,
           averageCostRM: parseCloudNumber(product?.averageCost),
-          shippingRate: batch
-            ? getCloudBatchShippingRate(batch)
-            : parseCloudNumber(source?.shippingRate),
+          shippingRate: (() => {
+            const batchShippingRate = batch
+              ? getCloudBatchShippingRate(batch)
+              : 0;
+
+            const storedImportShippingRate = parseCloudNumber(
+              source?.shippingRate ??
+              source?.overseasShippingRate
+            );
+
+            // Batch calculation is preferred. Historical import records are
+            // the safe fallback when a batch field is missing or was cleared.
+            return batchShippingRate > 0
+              ? batchShippingRate
+              : storedImportShippingRate;
+          })(),
           inlandMiscPercent,
           batchGoodsTotal: purchaseTotal,
           batchInlandCost: inlandCost,
@@ -1122,7 +1201,7 @@
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 9,
+            version: 10,
             exportedAt: new Date().toISOString(),
             records
           })
