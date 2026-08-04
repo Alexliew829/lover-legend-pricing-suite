@@ -189,8 +189,42 @@
     .source-cost-row .import-product-picker,
     .source-cost-row .import-cost-field {
       flex: 1 1 0;
+      width: 50%;
       min-width: 0;
       margin: 0;
+    }
+
+    .source-cost-row > div > label {
+      height: 42px;
+      display: flex;
+      align-items: flex-end;
+      margin: 0 0 4px;
+      line-height: 1.15;
+    }
+
+    .source-cost-row .import-product-combobox,
+    .source-cost-row #price_display {
+      height: 42px;
+      min-height: 42px;
+      margin: 0;
+    }
+
+    .source-cost-row .import-cost-field > label {
+      position: relative;
+      padding-right: 34px;
+    }
+
+    .source-cost-row .import-cost-field .mini-btn {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 30px !important;
+      height: 28px;
+      padding: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-1px);
     }
 
     .currency-inland-row > div {
@@ -229,11 +263,11 @@
       .import-product-options {
         position: fixed;
         z-index: 100000;
-        top: 18vh;
-        left: 14px;
-        right: 14px;
+        top: 14vh;
+        left: 10px;
+        right: 10px;
         width: auto;
-        max-height: 62vh;
+        max-height: 70vh;
         border-radius: 12px;
         box-shadow: 0 12px 34px rgba(0,0,0,.28);
         overscroll-behavior: contain;
@@ -258,7 +292,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.0</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V3.1</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -586,6 +620,269 @@
 
     const IMPORT_UNIT_PRICE_KEY =
       "loverLegendPricingSuiteImportUnitPrices";
+
+    const IMPORT_SYSTEM_CLOUD_URL =
+      "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
+
+    function getCloudBatchShippingRate(batch) {
+      const storedRate = Number(batch?.shippingRate);
+      if (Number.isFinite(storedRate) && storedRate > 0) {
+        return storedRate;
+      }
+
+      const shippingMY = Number(batch?.shippingMY) || 0;
+      if (shippingMY <= 0) return 0;
+
+      let allForeignCostsRM =
+        Number(batch?.totalForeignCostsRM) || 0;
+
+      if (allForeignCostsRM <= 0) {
+        const items = Array.isArray(batch?.items)
+          ? batch.items
+          : [];
+
+        const rate =
+          Number(batch?.rate) ||
+          Number(items.find(item => Number(item?.rate) > 0)?.rate) ||
+          0;
+
+        const productForeignTotal = items.reduce((sum, item) => {
+          const stored = Number(item?.foreignTotal);
+          if (Number.isFinite(stored) && stored > 0) {
+            return sum + stored;
+          }
+
+          const quantity = Number(
+            item?.originalQuantity ??
+            item?.stockAdded ??
+            item?.quantity
+          ) || 0;
+
+          return sum + quantity * (Number(item?.unitPrice) || 0);
+        }, 0);
+
+        const foreignGrandTotal =
+          productForeignTotal +
+          (Number(batch?.chinaTransportCost) || 0) +
+          (Number(batch?.potCost) || 0);
+
+        if (rate > 0 && foreignGrandTotal > 0) {
+          allForeignCostsRM = foreignGrandTotal / rate;
+        }
+      }
+
+      return allForeignCostsRM > 0
+        ? shippingMY / allForeignCostsRM * 100
+        : 0;
+    }
+
+    function buildCloudImportProductRecords(data) {
+      const imports = Array.isArray(data?.imports) ? data.imports : [];
+      const batches = Array.isArray(data?.batches) ? data.batches : [];
+      const products = Array.isArray(data?.products) ? data.products : [];
+
+      const productById = new Map(
+        products.map(product => [String(product?.id || ""), product])
+      );
+      const productByName = new Map(
+        products.map(product => [
+          String(product?.name || "").trim().toLocaleLowerCase(),
+          product
+        ])
+      );
+      const batchByNumber = new Map(
+        batches.map(batch => [
+          String(batch?.importNumber || "").trim().toLocaleLowerCase(),
+          batch
+        ])
+      );
+
+      const records = [];
+      const seen = new Set();
+
+      const addRecord = source => {
+        const productName = String(
+          source?.productName || source?.name || ""
+        ).trim();
+        const category = String(source?.category || "盆栽").trim();
+        const importNumber = String(source?.importNumber || "").trim();
+        const currency = String(source?.currency || "")
+          .trim()
+          .toUpperCase();
+        const unitPrice = Number(source?.unitPrice);
+
+        if (
+          !productName ||
+          category !== "盆栽" ||
+          !currency ||
+          !Number.isFinite(unitPrice) ||
+          unitPrice <= 0
+        ) {
+          return;
+        }
+
+        const key = [
+          productName.toLocaleLowerCase(),
+          importNumber.toLocaleLowerCase(),
+          currency,
+          unitPrice
+        ].join("|");
+
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        const batch =
+          batchByNumber.get(importNumber.toLocaleLowerCase()) || null;
+        const product =
+          productById.get(String(source?.productId || "")) ||
+          productByName.get(productName.toLocaleLowerCase()) ||
+          null;
+
+        const rate =
+          Number(source?.rate) ||
+          Number(batch?.rate) ||
+          0;
+
+        const inlandCost =
+          (Number(batch?.chinaTransportCost) || 0) +
+          (Number(batch?.potCost) || 0);
+
+        const purchaseTotal = batch
+          ? (
+              Number(batch?.foreignTotal) ||
+              (Array.isArray(batch?.items)
+                ? batch.items.reduce((sum, item) => {
+                    const stored = Number(item?.foreignTotal);
+                    if (Number.isFinite(stored) && stored > 0) {
+                      return sum + stored;
+                    }
+
+                    const quantity = Number(
+                      item?.originalQuantity ??
+                      item?.stockAdded ??
+                      item?.quantity
+                    ) || 0;
+
+                    return sum +
+                      quantity * (Number(item?.unitPrice) || 0);
+                  }, 0)
+                : 0)
+            )
+          : 0;
+
+        const inlandMiscPercent =
+          purchaseTotal + inlandCost > 0
+            ? inlandCost / (purchaseTotal + inlandCost) * 100
+            : 0;
+
+        records.push({
+          id: String(source?.id || key),
+          productId: String(source?.productId || ""),
+          productName,
+          category,
+          importNumber,
+          unitPrice,
+          currency,
+          rate,
+          averageCostRM: Number(product?.averageCost) || 0,
+          shippingRate: batch
+            ? getCloudBatchShippingRate(batch)
+            : Number(source?.shippingRate) || 0,
+          inlandMiscPercent,
+          updatedAt: String(
+            source?.updatedAt || source?.createdAt || ""
+          )
+        });
+      };
+
+      imports.forEach(addRecord);
+      batches.forEach(batch => {
+        (Array.isArray(batch?.items) ? batch.items : [])
+          .forEach(item => addRecord({
+            ...item,
+            importNumber:
+              item?.importNumber || batch?.importNumber || "",
+            currency: item?.currency || batch?.currency || "",
+            rate: item?.rate || batch?.rate || 0
+          }));
+      });
+
+      records.sort((a, b) =>
+        a.productName.localeCompare(
+          b.productName,
+          "zh-Hans-CN",
+          { numeric: true, sensitivity: "base" }
+        )
+      );
+
+      return records;
+    }
+
+    async function refreshImportProductsFromCloud() {
+      const status = document.getElementById("importProductStatus");
+
+      try {
+        if (status) {
+          status.classList.remove("error");
+          status.textContent = "正在读取进口系统产品…";
+        }
+
+        const response = await fetch(IMPORT_SYSTEM_CLOUD_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            action: "pull",
+            knownRevision: 0,
+            hasLocalData: false,
+            forceFull: true
+          }),
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (
+          !data?.ok ||
+          !Array.isArray(data.products) ||
+          !Array.isArray(data.imports) ||
+          !Array.isArray(data.batches)
+        ) {
+          throw new Error(data?.error || "云端资料不完整");
+        }
+
+        const records = buildCloudImportProductRecords(data);
+
+        localStorage.setItem(
+          IMPORT_UNIT_PRICE_KEY,
+          JSON.stringify({
+            version: 7,
+            exportedAt: new Date().toISOString(),
+            records
+          })
+        );
+
+        renderImportProductOptions();
+        return records.length;
+      } catch (error) {
+        renderImportProductOptions();
+
+        const localRecords = readImportUnitPriceRecords();
+        if (!localRecords.length && status) {
+          status.classList.add("error");
+          status.textContent =
+            "无法读取产品，请确认网络及进口系统云端同步";
+        }
+
+        console.warn("读取进口系统云端产品失败", error);
+        return localRecords.length;
+      }
+    }
 
     let importProductRecords = [];
     let visibleImportProductRecords = [];
@@ -1213,6 +1510,7 @@ window.onload = () => {
   autoDetectCurrency();
 
   renderImportProductOptions();
+  refreshImportProductsFromCloud();
 
   const importProductSearch =
     document.getElementById("importProductSearch");
@@ -1238,9 +1536,15 @@ window.onload = () => {
     }
   });
 
+  let lastImportProductChoiceAt = 0;
+
   const chooseImportProduct = event => {
     const option = event.target.closest(".import-product-option");
     if (!option) return;
+
+    const now = Date.now();
+    if (now - lastImportProductChoiceAt < 350) return;
+    lastImportProductChoiceAt = now;
 
     event.preventDefault();
     event.stopPropagation();
@@ -1252,7 +1556,12 @@ window.onload = () => {
   };
 
   importProductOptions?.addEventListener(
-    "pointerdown",
+    "pointerup",
+    chooseImportProduct
+  );
+
+  importProductOptions?.addEventListener(
+    "click",
     chooseImportProduct
   );
 
@@ -1288,6 +1597,7 @@ window.onload = () => {
   }
 
   const refreshImportProducts = () => {
+    refreshImportProductsFromCloud();
     renderImportProductOptions();
     if (!document.getElementById("importProductOptions")?.hidden) {
       openImportProductOptions();
