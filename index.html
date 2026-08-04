@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=4.2-correct-batch-total"
+          src="cost-calculator/index.html?v=4.3-batch-formula-fix"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.2"
+          src="bonsai-price-calculator/index.html?v=3.3"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -835,13 +835,13 @@
           const keys = await caches.keys();
           await Promise.all(
             keys
-              .filter(key => key !== "lover-legend-pricing-suite-v3.2-flat-click-fix")
+              .filter(key => key !== "lover-legend-pricing-suite-v3.3-flat-click-fix")
               .map(key => caches.delete(key))
           );
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=3.2-correct-batch-total", { updateViaCache: "none" })
+          .register("sw.js?v=3.3-batch-formula-fix", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
