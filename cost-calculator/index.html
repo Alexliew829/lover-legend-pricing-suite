@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.9</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V4.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1214,7 +1214,7 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V4.9: 产品 Item 是固定成本的第一资料来源。
+            // V4.8: 产品 Item 是固定成本的第一资料来源。
             // 只有 Item 没有有效比例时，才读取 Batch 或重新计算。
             const itemFixedShippingRate =
               parseCloudNumber(source?.fixedShippingRate);
@@ -1391,39 +1391,12 @@
         .replace(/[\s\u3000\-_./\\,，、:：;；()（）[\]【】{}"'`~!！?？@#$%^&*+=|<>]+/g, "");
     }
 
-    function extractImportProductCodes(value) {
-      const source = String(value || "")
-        .normalize("NFKC")
-        .toLocaleLowerCase();
-
-      return source.match(/[a-z]{1,6}[0-9][a-z0-9]*/g) || [];
-    }
-
-    function isExactProductCodeQuery(value) {
-      const query = normalizeImportProductSearchText(value);
-      return /^[a-z]{1,6}[0-9][a-z0-9]*$/.test(query);
-    }
-
     function unorderedImportProductMatch(sourceValue, queryValue) {
       const source = normalizeImportProductSearchText(sourceValue);
       const query = normalizeImportProductSearchText(queryValue);
 
       if (!query) return true;
-
-      // V4.9：型号搜索必须完整相同。
-      // 例如 BX580 只匹配 BX580，不再误配 BX1680、BX780、BX980。
-      if (isExactProductCodeQuery(query)) {
-        return extractImportProductCodes(sourceValue)
-          .some(code => code === query);
-      }
-
       if (source.includes(query)) return true;
-
-      // 中文关键词保留不按字序搜索：例如“高提根”和“提根高”都能找到。
-      // 英文、数字或中英混合查询不再采用逐字乱序匹配，避免无关结果。
-      if (!/^[\p{Script=Han}]+$/u.test(query)) {
-        return false;
-      }
 
       const counts = new Map();
       Array.from(source).forEach(character => {
