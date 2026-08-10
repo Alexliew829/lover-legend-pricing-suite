@@ -1090,6 +1090,8 @@
           parseCloudNumber(batch?.fixedRate) ||
           parseCloudNumber(source?.rate) ||
           parseCloudNumber(batch?.rate) ||
+          parseCloudNumber(source?.exchangeRate) ||
+          parseCloudNumber(batch?.exchangeRate) ||
           0;
 
         const inlandTransport = parseCloudNumber(
@@ -1200,7 +1202,7 @@
           unitPrice,
           currency,
           rate,
-          averageCostRM: parseCloudNumber(product?.averageCost),
+          averageCostRM: parseCloudNumber(product?.averageCost ?? source?.averageCostRM),
           fixedUnitCostRM: parseCloudNumber(
             source?.fixedUnitCostRM ??
             source?.unitCost
