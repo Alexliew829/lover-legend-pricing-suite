@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V6.0</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V6.1</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1087,7 +1087,7 @@
         );
         const batch = matchResult?.batch || null;
         const matchedItem = matchResult?.matchedItem || null;
-        // V6.0 DEBUG MAPPING
+        // V6.1 DEBUG MAPPING
         // Temporary diagnostic: expose matched import object in console.
         window.__LL_DEBUG_MAPPING = {
           source,
@@ -1097,13 +1097,16 @@
           productName,
           unitPrice
         };
+        window.LL_DEBUG = function() {
+          return window.__LL_DEBUG_MAPPING;
+        };
 
         const product =
           productById.get(String(source?.productId || "")) ||
           productByName.get(productName.toLocaleLowerCase()) ||
           null;
 
-        // V6.0: Import batch is the source of truth for import cost fields.
+        // V6.1: Import batch is the source of truth for import cost fields.
         // Product/import rows may contain unitPrice only and must not override rate.
         const rate =
           parseCloudNumber(matchedItem?.rate) ||
@@ -1198,7 +1201,7 @@
         const batchHistoricalInlandMiscPercent =
           parseCloudNumber(batch?.inlandMiscPercent);
 
-        // V6.0: 内地杂费比例必须读取进口资料固定值。
+        // V6.1: 内地杂费比例必须读取进口资料固定值。
         // 不因为库存变化、平均成本变化重新反推比例。
         const batchStoredInlandMiscPercent =
           parseCloudNumber(
@@ -1243,7 +1246,7 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V6.0: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            // V6.1: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
             const batchStoredShippingRate =
               parseCloudNumber(
                 batch?.shippingRate ??
