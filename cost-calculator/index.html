@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1083,7 +1083,7 @@
           productByName.get(productName.toLocaleLowerCase()) ||
           null;
 
-        // V5.7: Import batch is the source of truth for import cost fields.
+        // V5.8: Import batch is the source of truth for import cost fields.
         // Product/import rows may contain unitPrice only and must not override rate.
         const rate =
           parseCloudNumber(batch?.rate) ||
@@ -1176,7 +1176,7 @@
         const batchHistoricalInlandMiscPercent =
           parseCloudNumber(batch?.inlandMiscPercent);
 
-        // V5.7: 内地杂费比例必须读取进口资料固定值。
+        // V5.8: 内地杂费比例必须读取进口资料固定值。
         // 不因为库存变化、平均成本变化重新反推比例。
         const batchStoredInlandMiscPercent =
           parseCloudNumber(
@@ -1221,7 +1221,7 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V5.7: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            // V5.8: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
             const batchStoredShippingRate =
               parseCloudNumber(
                 batch?.shippingRate ??
