@@ -6,6 +6,7 @@
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <title>成本与售价计算器 - 情人传奇</title>
   <style>
+    .ll-debug-panel{display:none;white-space:pre-wrap;background:#fff7e6;border:1px dashed #d46b08;padding:10px;margin-top:10px;font-size:12px;}
     body {
   font-family: sans-serif;
   padding: 8px 15px;
@@ -1100,6 +1101,17 @@
         window.LL_DEBUG = function() {
           return window.__LL_DEBUG_MAPPING;
         };
+        const debugPanel = document.getElementById('llDebugPanel');
+        if (debugPanel) {
+          debugPanel.style.display = 'block';
+          debugPanel.textContent =
+            '=== DEBUG IMPORT MAPPING V6.2 ===\n' +
+            'Import: ' + (importNumber || '') + '\n' +
+            'Product: ' + (productName || '') + '\n' +
+            'Unit Price: ' + (unitPrice || '') + '\n\n' +
+            'matchedItem:\n' + JSON.stringify(matchedItem, null, 2) +
+            '\n\nbatch:\n' + JSON.stringify(batch, null, 2);
+        }
 
         const product =
           productById.get(String(source?.productId || "")) ||
@@ -2376,5 +2388,5 @@ window.onload = () => {
   });
 };
   </script>
-</body>
+<div id="llDebugPanel" class="ll-debug-panel"></div></body>
 </html>
