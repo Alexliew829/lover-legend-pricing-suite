@@ -1,4 +1,4 @@
-const CACHE = "lover-legend-cost-pricing-v5.2-exact-model-search";
+const CACHE = "lover-legend-cost-pricing-v5.3-fixed-import-mapping";
 const CORE = [
   "./",
   "./index.html",
