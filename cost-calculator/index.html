@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1174,18 +1174,27 @@
         const batchHistoricalInlandMiscPercent =
           parseCloudNumber(batch?.inlandMiscPercent);
 
-        // V5.3: 内地杂费比例必须读取进口资料固定值。
+        // V5.4: 内地杂费比例必须读取进口资料固定值。
         // 不因为库存变化、平均成本变化重新反推比例。
+        const batchStoredInlandMiscPercent =
+          parseCloudNumber(
+            batch?.inlandMiscPercent ??
+            batch?.inlandMiscRate ??
+            batch?.inlandMiscPercentage
+          );
+
         const inlandMiscPercent =
-          itemFixedInlandMiscPercent > 0
-            ? itemFixedInlandMiscPercent
-            : itemHistoricalInlandMiscPercent > 0
-              ? itemHistoricalInlandMiscPercent
-              : batchFixedInlandMiscPercent > 0
-                ? batchFixedInlandMiscPercent
-                : batchHistoricalInlandMiscPercent > 0
-                  ? batchHistoricalInlandMiscPercent
-                  : calculatedInlandMiscPercent;
+          batchStoredInlandMiscPercent > 0
+            ? batchStoredInlandMiscPercent
+            : itemFixedInlandMiscPercent > 0
+              ? itemFixedInlandMiscPercent
+              : itemHistoricalInlandMiscPercent > 0
+                ? itemHistoricalInlandMiscPercent
+                : batchFixedInlandMiscPercent > 0
+                  ? batchFixedInlandMiscPercent
+                  : batchHistoricalInlandMiscPercent > 0
+                    ? batchHistoricalInlandMiscPercent
+                    : calculatedInlandMiscPercent;
 
         records.push({
           id: String(source?.id || key),
@@ -1210,12 +1219,21 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V5.3: 产品 Item 固定成本优先，不因库存变化重新计算。
-            // 只有 Item 没有有效比例时，才读取 Batch 或重新计算。
-            const itemFixedShippingRate =
-              parseCloudNumber(source?.fixedShippingRate);
-            if (itemFixedShippingRate > 0) {
-              return itemFixedShippingRate;
+            // V5.4: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            const batchStoredShippingRate =
+              parseCloudNumber(
+                batch?.shippingRate ??
+                batch?.overseasShippingRate ??
+                batch?.overseasFreightRate
+              );
+            if (batchStoredShippingRate > 0) {
+              return batchStoredShippingRate;
+            }
+
+            const batchFixedShippingRate =
+              parseCloudNumber(batch?.fixedShippingRate);
+            if (batchFixedShippingRate > 0) {
+              return batchFixedShippingRate;
             }
 
             const itemHistoricalShippingRate =
@@ -1225,21 +1243,6 @@
               );
             if (itemHistoricalShippingRate > 0) {
               return itemHistoricalShippingRate;
-            }
-
-            const batchFixedShippingRate =
-              parseCloudNumber(batch?.fixedShippingRate);
-            if (batchFixedShippingRate > 0) {
-              return batchFixedShippingRate;
-            }
-
-            const batchHistoricalShippingRate =
-              parseCloudNumber(
-                batch?.shippingRate ??
-                batch?.overseasShippingRate
-              );
-            if (batchHistoricalShippingRate > 0) {
-              return batchHistoricalShippingRate;
             }
 
             return batch

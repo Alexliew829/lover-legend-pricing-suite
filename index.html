@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=5.3-fixed-import-mapping"
+          src="cost-calculator/index.html?v=5.4-fixed-import-mapping"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -841,7 +841,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=5.3-fixed-import-mapping", { updateViaCache: "none" })
+          .register("sw.js?v=5.4-fixed-import-mapping", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
