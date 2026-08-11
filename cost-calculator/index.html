@@ -437,7 +437,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V6.4</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V6.5</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -946,7 +946,7 @@
 
         const normalizedName = normalizeImportProductSearchText(productName);
 
-        // V6.4: Match by import number + product name first.
+        // V6.5: Match by import number + product name first.
         // Unit price is only a secondary score because historical cost updates
         // can change unit prices without changing the imported product.
         const nameMatched = candidates.filter(batch => {
@@ -1103,7 +1103,7 @@
         );
         const batch = matchResult?.batch || null;
         const matchedItem = matchResult?.matchedItem || null;
-        // V6.4 DEBUG MAPPING
+        // V6.5 DEBUG MAPPING
         // Temporary diagnostic: expose matched import object in console.
         window.__LL_DEBUG_MAPPING = {
           source,
@@ -1120,7 +1120,7 @@
         if (debugPanel) {
           debugPanel.style.display = 'block';
           debugPanel.textContent =
-            '=== DEBUG IMPORT MAPPING V6.4 ===\n' +
+            '=== DEBUG IMPORT MAPPING V6.5 ===\n' +
             'Import: ' + (importNumber || '') + '\n' +
             'Product: ' + (productName || '') + '\n' +
             'Unit Price: ' + (unitPrice || '') + '\n\n' +
@@ -1133,7 +1133,7 @@
           productByName.get(productName.toLocaleLowerCase()) ||
           null;
 
-        // V6.4: Import batch is the source of truth for import cost fields.
+        // V6.5: Import batch is the source of truth for import cost fields.
         // Product/import rows may contain unitPrice only and must not override rate.
         const rate =
           parseCloudNumber(matchedItem?.rate) ||
@@ -1228,7 +1228,7 @@
         const batchHistoricalInlandMiscPercent =
           parseCloudNumber(batch?.inlandMiscPercent);
 
-        // V6.4: 内地杂费比例必须读取进口资料固定值。
+        // V6.5: 内地杂费比例必须读取进口资料固定值。
         // 不因为库存变化、平均成本变化重新反推比例。
         const batchStoredInlandMiscPercent =
           parseCloudNumber(
@@ -1273,7 +1273,7 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V6.4: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            // V6.5: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
             const batchStoredShippingRate =
               parseCloudNumber(
                 batch?.shippingRate ??
