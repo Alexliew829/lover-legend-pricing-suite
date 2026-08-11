@@ -436,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.5</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V5.6</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1174,7 +1174,7 @@
         const batchHistoricalInlandMiscPercent =
           parseCloudNumber(batch?.inlandMiscPercent);
 
-        // V5.5: 内地杂费比例必须读取进口资料固定值。
+        // V5.6: 内地杂费比例必须读取进口资料固定值。
         // 不因为库存变化、平均成本变化重新反推比例。
         const batchStoredInlandMiscPercent =
           parseCloudNumber(
@@ -1219,7 +1219,7 @@
             source?.costSnapshotLocked === true ||
             batch?.costSnapshotLocked === true,
           shippingRate: (() => {
-            // V5.5: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            // V5.6: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
             const batchStoredShippingRate =
               parseCloudNumber(
                 batch?.shippingRate ??
@@ -1635,16 +1635,50 @@
       const freightInput = document.getElementById("freight");
       const inlandMiscInput = document.getElementById("inlandMisc");
       const localInput = document.getElementById("local");
-      const currency = String(record.currency || "").toUpperCase();
-      const unitPrice = Number(record.unitPrice);
-      const inlandMiscPercent = Number(
-        record.inlandMiscPercent ??
-        record.inlandFeePercent ??
-        record.domesticMiscPercent ??
+      const currency = String(
+        record.currency ??
+        record.money ??
+        ""
+      ).toUpperCase();
+
+      const unitPrice = Number(
+        record.unitPrice ??
+        record.price ??
+        record.purchasePrice ??
         0
       );
-      const recordRate = Number(record.rate);
-      const shippingRate = Number(record.shippingRate);
+
+      // Import System fields compatibility
+      // Accept both decimal (0.395) and percentage (39.5)
+      const normalizePercent = value => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return 0;
+        return n > 0 && n < 1 ? n * 100 : n;
+      };
+
+      const inlandMiscPercent = normalizePercent(
+        record.inlandMiscPercent ??
+        record.inlandMiscRate ??
+        record.inlandFeePercent ??
+        record.domesticMiscPercent ??
+        record["内地杂费比例"] ??
+        0
+      );
+
+      const recordRate = Number(
+        record.rate ??
+        record.exchangeRate ??
+        record.fxRate ??
+        0
+      );
+
+      const shippingRate = normalizePercent(
+        record.shippingRate ??
+        record.overseasShippingRate ??
+        record.fixedShippingRate ??
+        record["海外运费比例"] ??
+        0
+      );
 
       if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
 
