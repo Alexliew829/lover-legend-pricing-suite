@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <title>成本与售价计算器 - 情人传奇</title>
+  <style>
+    body {
+  font-family: sans-serif;
+  padding: 8px 15px;
+      background-color: #f9f9f9;
+      max-width: 800px;
+      margin: auto;
+      -webkit-text-size-adjust: 100%;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    h1 img { height: 40px; }
+    p { text-align: center; color: #666; }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    label {
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .result {
+      margin-top: 12px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+     
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background: linear-gradient(to right, #7fbf7f, #4CAF50);
+      color: white;
+      border: none;
+      margin-top: 8px;
+      border-radius: 20px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button:hover {
+      background: linear-gradient(to right, #6dae6d, #3e9944);
+    }
+
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+
+    .entry {
+      font-size: 15px;
+      margin: 4px 0;
+      white-space: nowrap;
+    }
+
+    /* ✅ 小按钮：覆盖全局 button 样式 */
+    .mini-btn{
+      width: auto !important;
+      padding: 4px 8px !important;
+      font-size: 14px !important;
+      border-radius: 10px !important;
+      background: #333 !important;
+      color: #fff !important;
+      border: none !important;
+      cursor: pointer !important;
+      margin-top: 0 !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      touch-action: manipulation !important;
+    }
+
+    .import-product-picker {
+      position: relative;
+      margin: 0 0 6px;
+    }
+
+    .import-product-picker label {
+      display: block;
+      margin-bottom: 3px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .import-product-combobox {
+      position: relative;
+    }
+
+    .import-product-search {
+      width: 100%;
+      min-height: 40px;
+      padding: 7px 42px 7px 9px;
+      border: 1px solid #b8c4b6;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+      color: #111;
+    }
+
+    .import-product-toggle {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 40px !important;
+      height: 38px;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 0 8px 8px 0 !important;
+      background: #eef4ec !important;
+      color: #174f2d !important;
+      font-size: 18px !important;
+    }
+
+    .import-product-options {
+      position: absolute;
+      z-index: 9998;
+      top: calc(100% + 3px);
+      left: 0;
+      right: 0;
+      max-height: min(330px, 52vh);
+      overflow-y: auto;
+      border: 1px solid #aeb9ac;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .import-product-option {
+      display: block;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 9px 10px !important;
+      border: 0 !important;
+      border-bottom: 1px solid #e4e9e2 !important;
+      border-radius: 0 !important;
+      background: #fff !important;
+      color: #111 !important;
+      text-align: left;
+      font-size: 14px !important;
+      line-height: 1.3;
+    }
+
+    .import-product-option:last-child { border-bottom: 0 !important; }
+    .import-product-option:active,
+    .import-product-option:hover { background: #edf6eb !important; }
+
+    .import-product-option strong,
+    .import-product-option span { display: block; }
+    .import-product-option span { margin-top: 2px; color: #555; font-size: 12px; }
+
+    .import-product-empty {
+      padding: 12px;
+      color: #777;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .import-product-status {
+      min-height: 18px;
+      margin-top: 2px;
+      color: #666;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .import-product-status.error { color: #b22222; }
+
+    .source-cost-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .source-cost-row .import-product-picker,
+    .source-cost-row .import-cost-field {
+      flex: 1 1 0;
+      width: 50%;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .source-cost-row > div > label {
+      height: 42px;
+      display: flex;
+      align-items: flex-end;
+      margin: 0 0 4px;
+      line-height: 1.15;
+    }
+
+    .source-cost-row .import-product-combobox,
+    .source-cost-row #price_display {
+      height: 42px;
+      min-height: 42px;
+      margin: 0;
+    }
+
+    .source-cost-row .import-cost-field > label {
+      position: relative;
+      padding-right: 34px;
+    }
+
+    .source-cost-row .import-cost-field .mini-btn {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 30px !important;
+      height: 28px;
+      padding: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-1px);
+    }
+
+    .currency-inland-row > div {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 4px 10px;
+      }
+
+      h1 {
+        gap: 7px;
+        margin: 4px 0 2px;
+        font-size: 27px;
+        line-height: 1.05;
+        white-space: nowrap;
+      }
+
+      h1 img {
+        height: 34px;
+      }
+
+      body > p {
+        margin: 4px 0 12px !important;
+        font-size: 20px !important;
+        line-height: 1.05;
+      }
+
+      .source-cost-row {
+        display: block;
+      }
+
+      .source-cost-row .import-product-picker,
+      .source-cost-row .import-cost-field {
+        width: 100%;
+        min-width: 0;
+        margin: 0 0 5px;
+      }
+
+      .source-cost-row > div > label {
+        height: auto;
+        min-height: 0;
+        margin: 0 0 3px;
+        align-items: center;
+      }
+
+      .source-cost-row .import-product-combobox,
+      .source-cost-row #price_display {
+        height: 40px;
+        min-height: 40px;
+      }
+
+      .source-cost-row .import-cost-field > label {
+        min-height: 28px;
+      }
+
+      .source-cost-row .import-cost-field .mini-btn {
+        bottom: 0;
+        transform: none;
+      }
+
+      .import-product-search {
+        font-size: 15px;
+        min-height: 40px;
+      }
+
+      .import-product-toggle {
+        height: 38px;
+      }
+
+      .import-product-options {
+        position: fixed;
+        z-index: 100010;
+        top: 12vh;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        max-height: 74vh;
+        border-radius: 12px;
+        box-shadow: 0 12px 34px rgba(0,0,0,.28);
+        overscroll-behavior: contain;
+      }
+
+      .import-product-option {
+        min-height: 58px;
+        padding: 11px 12px !important;
+        touch-action: manipulation;
+      }
+
+      .import-product-status {
+        min-height: 15px;
+        margin-top: 2px;
+        font-size: 11px;
+      }
+
+      .row {
+        gap: 6px;
+      }
+
+      input,
+      select {
+        padding: 7px;
+        margin: 2px 0;
+      }
+
+      label {
+        font-size: 14px;
+      }
+
+      .result {
+        margin-top: 8px;
+        padding: 7px;
+      }
+
+      .result .entry {
+        font-size: 19px !important;
+        line-height: 1.34;
+        margin: 3px 0;
+      }
+
+      .result .entry:first-child {
+        font-size: 20px !important;
+      }
+
+      .import-product-options {
+        padding-top: 58px;
+      }
+
+      .import-product-list {
+        min-height: 1px;
+      }
+
+      .mobile-product-backdrop {
+        display: block;
+        position: fixed;
+        z-index: 99990;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.18);
+        touch-action: none;
+      }
+
+      .mobile-product-search-wrap {
+        display: block;
+        position: fixed;
+        z-index: 100020;
+        top: calc(12vh + 8px);
+        left: 16px;
+        right: 16px;
+        padding: 0;
+        background: #fff;
+      }
+
+      .mobile-product-search-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .mobile-product-search {
+        flex: 1;
+        width: auto;
+        height: 46px;
+        min-height: 46px;
+        margin: 0;
+        padding: 8px 12px;
+        border: 2px solid #1e5631;
+        border-radius: 9px;
+        font-size: 18px;
+        font-weight: 700;
+        background: #fff;
+      }
+
+      .mobile-product-close {
+        flex: 0 0 48px;
+        height: 46px;
+        border: 1px solid #bbb;
+        border-radius: 9px;
+        background: #f3f3f3;
+        font-size: 24px;
+        font-weight: 900;
+        color: #333;
+      }
+
+      .import-product-option strong {
+        font-size: 18px;
+        line-height: 1.25;
+      }
+
+      .import-product-option span {
+        font-size: 16px;
+        line-height: 1.35;
+      }
+    }
+
+    @media (min-width: 601px) {
+      .mobile-product-search-wrap,
+      .mobile-product-backdrop {
+        display: none;
+      }
+    }
+
+
+  </style>
+</head>
+
+<body>
+  <h1>
+    <img src="Logo2.jpg" alt="情人传奇 Logo" />
+    <span>成本与售价计算器</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V6.0</span>
+  </h1>
+  <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
+    – Lover Legend Gardening
+  </p>
+
+  <div class="source-cost-row">
+    <div class="import-product-picker">
+      <label for="importProductSearch">从进口系统选择产品：</label>
+      <div class="import-product-combobox">
+        <input
+          id="importProductSearch"
+          class="import-product-search"
+          type="search"
+          autocomplete="off"
+          placeholder="搜索或选择产品"
+          aria-autocomplete="list"
+          aria-controls="importProductOptions"
+          aria-expanded="false"
+        />
+        <button id="importProductToggle" class="import-product-toggle" type="button" aria-label="展开产品">▼</button>
+        <div id="importProductOptions" class="import-product-options" role="listbox" hidden></div>
+      </div>
+    </div>
+
+    <div class="import-cost-field">
+      <label for="price_display" style="display:flex; align-items:center; gap:6px;">
+        <span>盆栽进口成本：</span>
+        <button type="button" class="mini-btn" onclick="toggleCalc(true)">🧮</button>
+      </label>
+      <input
+        id="price_display"
+        onblur="formatDisplayPrice()"
+        oninput="updateRawPrice()"
+        type="text"
+        inputmode="decimal"
+        maxlength="10"
+        placeholder="000,000.00"
+      />
+      <input id="price" type="hidden" value="" />
+    </div>
+  </div>
+  <div id="importProductStatus" class="import-product-status"></div>
+
+  <div class="row currency-inland-row">
+    <div>
+      <label for="currency">货币：</label>
+      <select id="currency" onchange="setRate()">
+        <option selected value="CNY">CNY</option>
+        <option value="NTD">NTD</option>
+        <option value="VND">VND</option>
+        <option value="IDR">IDR</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="rate">汇率：</label>
+      <input id="rate" type="text" value="1.60" />
+    </div>
+
+    <div>
+      <label for="inlandMisc">内地杂费比例：</label>
+      <input
+        id="inlandMisc"
+        type="text"
+        inputmode="decimal"
+        maxlength="6"
+        value="0.00%"
+        onblur="normalizeInlandMiscInput()"
+      />
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="freight">海外运费比例：</label>
+      <input
+        id="freight"
+        type="text"
+        inputmode="decimal"
+        maxlength="6"
+        value="20.00%"
+        onblur="normalizeFreightInput()"
+      />
+    </div>
+
+    <div>
+      <label for="pot">花盆成本：</label>
+      <input id="pot" type="text" value="0" />
+    </div>
+  </div>
+
+<div class="row">
+  <div>
+    <label for="moss">苔藓成本：</label>
+    <input id="moss" type="text" value="0" />
+  </div>
+
+  <div>
+    <label for="local">
+      本地运费：
+      <span style="color:#8B0000;font-weight:bold;">
+        （钉木架80）
+      </span>
+    </label>
+    <input id="local" type="text" value="20" />
+  </div>
+</div>
+<div class="row" style="align-items:end; gap:5px;">
+  <div style="flex:0.75;">
+    <label for="actualPrice">实际售价：</label>
+    <input
+      id="actualPrice"
+      type="text"
+      value="0"
+      onblur="formatActualPrice()"
+    />
+  </div>
+
+  <div style="flex:0.75;">
+    <label for="receivedDisplay">到手金额：</label>
+    <input
+      id="receivedDisplay"
+      type="text"
+      readonly
+      value="0"
+    />
+  </div>
+
+  <div style="flex:0.75;">
+    <label for="actualNetProfitDisplay">净利：</label>
+    <input
+      id="actualNetProfitDisplay"
+      type="text"
+      readonly
+      value="0"
+    />
+  </div>
+
+  <div style="flex:0.65;">
+    <label for="actualMarginDisplay">利润率：</label>
+    <input
+      id="actualMarginDisplay"
+      type="text"
+      readonly
+      value="0"
+    />
+  </div>
+
+  <div style="flex:0.75;">
+    <button onclick="calculate()" style="margin-top:0;">
+      🧮 计算
+    </button>
+  </div>
+</div>
+    <div class="result" id="result"></div>
+
+  <!-- ✅ 小计算器弹窗 -->
+  <div id="calcModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; touch-action: manipulation;">
+    <div id="calcBox" style="
+      width:min(360px, 92vw);
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+      margin:12vh auto;
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    ">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="font-size:16px;">🧮 计算机</strong>
+        <button type="button" class="mini-btn" onclick="toggleCalc(false)" style="background:#777 !important;">关闭</button>
+      </div>
+
+      <!-- ✅ readonly + inputmode none：减少 iOS 双击放大 -->
+      <input
+        id="calcDisplay"
+        type="text"
+        readonly
+        inputmode="none"
+        placeholder="0"
+        style="
+          width:100%;
+          font-size:22px;
+          padding:10px;
+          border:1px solid #ddd;
+          border-radius:10px;
+          box-sizing:border-box;
+          margin-bottom:10px;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          user-select: none;
+          -webkit-user-select: none;
+        "
+      />
+
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; touch-action: manipulation;">
+        <button type="button" onclick="calcKey('7')">7</button>
+        <button type="button" onclick="calcKey('8')">8</button>
+        <button type="button" onclick="calcKey('9')">9</button>
+        <button type="button" onclick="calcKey('/')">÷</button>
+
+        <button type="button" onclick="calcKey('4')">4</button>
+        <button type="button" onclick="calcKey('5')">5</button>
+        <button type="button" onclick="calcKey('6')">6</button>
+        <button type="button" onclick="calcKey('*')">×</button>
+
+        <button type="button" onclick="calcKey('1')">1</button>
+        <button type="button" onclick="calcKey('2')">2</button>
+        <button type="button" onclick="calcKey('3')">3</button>
+        <button type="button" onclick="calcKey('-')">−</button>
+
+        <button type="button" onclick="calcKey('0')">0</button>
+        <button type="button" onclick="calcKey('.')">.</button>
+        <button type="button" onclick="calcBack()">⌫</button>
+        <button type="button" onclick="calcKey('+')">+</button>
+
+        <button type="button" onclick="calcKey('(')">(</button>
+        <button type="button" onclick="calcKey(')')">)</button>
+        <button type="button" onclick="calcKey('%')">%</button>
+        <button type="button" onclick="calcClear()">C</button>
+
+        <button type="button" onclick="calcEval()" style="grid-column: span 2; font-weight:bold;">=</button>
+        <button type="button" onclick="fillImportCost()" style="grid-column: span 2; font-weight:bold;">填入成本</button>
+      </div>
+
+      <style>
+        /* ✅ 只影响计算器里面的按钮 */
+        #calcModal button{
+          width:auto !important;
+          padding:10px !important;
+          font-size:16px !important;
+          border-radius:10px !important;
+          border:1px solid #ddd !important;
+          background:#fafafa !important;
+          color:#111 !important;
+          cursor:pointer !important;
+          margin-top:0 !important;
+          touch-action: manipulation !important;
+          -webkit-tap-highlight-color: transparent !important;
+          user-select: none !important;
+          -webkit-user-select: none !important;
+        }
+        #calcModal button:hover{ background:#f0f0f0 !important; }
+        #calcModal button:active{ transform: scale(0.98); }
+      </style>
+    </div>
+  </div>
+
+  <script>
+    const defaultRates = {
+  CNY: 1.6,
+  NTD: 7.69,
+  VND: 6300.00,
+  IDR: 3571.00
+};
+    const defaultFreight = {
+      CNY: "20%",
+      NTD: "20%",
+      VND: "84.75%",
+      IDR: "50%"
+    };
+
+    const defaultLocal = { CNY: 0, NTD: 20, VND: 20, IDR: 20 };
+
+
+    const PRICING_SETTINGS_KEY = "loverLegendPricingSettingsV1";
+
+    function normalizeExternalPricingSettings(value) {
+      const normalized = {
+        rates: { ...defaultRates },
+        freight: {
+          CNY: parseFloat(defaultFreight.CNY),
+          NTD: parseFloat(defaultFreight.NTD),
+          VND: parseFloat(defaultFreight.VND),
+          IDR: parseFloat(defaultFreight.IDR)
+        }
+      };
+
+      if (!value || typeof value !== "object") return normalized;
+
+      ["CNY", "NTD", "VND", "IDR"].forEach(currency => {
+        const rate = Number(value.rates && value.rates[currency]);
+        const freight = Number(value.freight && value.freight[currency]);
+
+        if (Number.isFinite(rate) && rate > 0) {
+          normalized.rates[currency] = rate;
+        }
+        if (Number.isFinite(freight) && freight >= 0) {
+          normalized.freight[currency] = freight;
+        }
+      });
+
+      return normalized;
+    }
+
+    function readSavedPricingSettings() {
+      try {
+        return normalizeExternalPricingSettings(
+          JSON.parse(localStorage.getItem(PRICING_SETTINGS_KEY) || "null")
+        );
+      } catch (error) {
+        return normalizeExternalPricingSettings(null);
+      }
+    }
+
+    function applyPricingSettings(settings) {
+      const normalized = normalizeExternalPricingSettings(settings);
+
+      ["CNY", "NTD", "VND", "IDR"].forEach(currency => {
+        defaultRates[currency] = normalized.rates[currency];
+        defaultFreight[currency] = `${normalized.freight[currency]}%`;
+      });
+
+      const currencyInput = document.getElementById("currency");
+      if (currencyInput) {
+        setRate();
+        clearCalculationResult(true);
+      }
+    }
+
+    window.applyPricingSettings = applyPricingSettings;
+
+
+    const IMPORT_UNIT_PRICE_KEY =
+      "loverLegendPricingSuiteImportUnitPrices";
+
+    const IMPORT_SYSTEM_CLOUD_URL =
+      "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
+
+    function getCloudBatchShippingRate(batch) {
+      const hasFixedShippingRate =
+        batch?.fixedShippingRate !== undefined &&
+        batch?.fixedShippingRate !== null &&
+        String(batch.fixedShippingRate).trim() !== "";
+
+      if (hasFixedShippingRate) {
+        const fixedShippingRate =
+          parseCloudNumber(batch.fixedShippingRate);
+
+        const historicalShippingRate =
+          parseCloudNumber(
+            batch?.shippingRate ??
+            batch?.overseasShippingRate
+          );
+
+        if (fixedShippingRate > 0) {
+          return fixedShippingRate;
+        }
+
+        if (historicalShippingRate > 0) {
+          return historicalShippingRate;
+        }
+      }
+
+      const shippingMY = parseCloudNumber(
+        batch?.shippingMY ??
+        batch?.overseasShippingMY ??
+        batch?.overseasFreightMY ??
+        batch?.shippingCostMY ??
+        batch?.malaysiaShipping ??
+        0
+      );
+
+      const rate = parseCloudNumber(
+        batch?.rate ??
+        batch?.exchangeRate ??
+        0
+      );
+
+      if (shippingMY <= 0 || rate <= 0) return 0;
+
+      const items = Array.isArray(batch?.items)
+        ? batch.items
+        : [];
+
+      const itemsGoodsTotal = items.reduce((sum, item) => {
+        const quantity = parseCloudNumber(
+          item?.originalQuantity ??
+          item?.stockAdded ??
+          item?.quantity
+        );
+        const unitPrice = parseCloudNumber(item?.unitPrice);
+        return sum + quantity * unitPrice;
+      }, 0);
+
+      const storedGoodsTotal = parseCloudNumber(
+        batch?.foreignTotal ??
+        batch?.totalGoodsForeign ??
+        batch?.totalPurchaseForeign ??
+        batch?.goodsForeignTotal
+      );
+
+      const goodsTotal =
+        storedGoodsTotal > 0
+          ? storedGoodsTotal
+          : itemsGoodsTotal;
+
+      const inlandTransport = parseCloudNumber(
+        batch?.chinaTransportCost ??
+        batch?.domesticTransportCost ??
+        batch?.inlandTransportCost ??
+        batch?.localTransportCost ??
+        batch?.chinaFreight
+      );
+
+      const matchingPotCost = parseCloudNumber(
+        batch?.potCost ??
+        batch?.matchingPotCost ??
+        batch?.pairedPotCost ??
+        batch?.potTotalCost ??
+        batch?.potMatchingCost
+      );
+
+      const totalForeignCost =
+        goodsTotal + inlandTransport + matchingPotCost;
+
+      if (totalForeignCost <= 0) return 0;
+
+      return shippingMY / (totalForeignCost / rate) * 100;
+    }
+
+    function isDateLikeCorruptedNumber(value) {
+      if (typeof value !== "string") return false;
+      const text = value.trim();
+      return /^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(text) ||
+        /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(text);
+    }
+
+    function parseCloudNumber(value) {
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      if (isDateLikeCorruptedNumber(value)) {
+        return 0;
+      }
+
+      const normalized = String(value ?? "")
+        .replace(/,/g, "")
+        .replace(/[^0-9.\-]/g, "")
+        .trim();
+
+      const number = Number(normalized);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function buildCloudImportProductRecords(data) {
+      const imports = Array.isArray(data?.imports) ? data.imports : [];
+      const batches = Array.isArray(data?.batches) ? data.batches : [];
+      const products = Array.isArray(data?.products) ? data.products : [];
+
+      const productById = new Map(
+        products.map(product => [String(product?.id || ""), product])
+      );
+      const productByName = new Map(
+        products.map(product => [
+          String(product?.name || "").trim().toLocaleLowerCase(),
+          product
+        ])
+      );
+      const batchesByNumber = new Map();
+
+      batches.forEach(batch => {
+        const key = String(batch?.importNumber || "")
+          .trim()
+          .toLocaleLowerCase();
+
+        if (!key) return;
+
+        if (!batchesByNumber.has(key)) {
+          batchesByNumber.set(key, []);
+        }
+
+        batchesByNumber.get(key).push(batch);
+      });
+
+      function getBatchItemsGoodsTotal(batch) {
+        const items = Array.isArray(batch?.items) ? batch.items : [];
+
+        return items.reduce((sum, item) => {
+          const quantity = parseCloudNumber(
+            item?.originalQuantity ??
+            item?.stockAdded ??
+            item?.quantity
+          );
+
+          const unitPrice = parseCloudNumber(item?.unitPrice);
+
+          // Always rebuild the goods total from quantity × original unit price.
+          // This avoids stale or wrongly formatted stored foreignTotal values.
+          return sum + quantity * unitPrice;
+        }, 0);
+      }
+
+      function resolveMatchingBatch(importNumber, productName, unitPrice) {
+        const key = String(importNumber || "")
+          .trim()
+          .toLocaleLowerCase();
+
+        const candidates = batchesByNumber.get(key) || [];
+
+        if (!candidates.length) return null;
+        if (candidates.length === 1) return candidates[0];
+
+        const normalizedName = normalizeImportProductSearchText(productName);
+
+        const scored = candidates.map(batch => {
+          const items = Array.isArray(batch?.items) ? batch.items : [];
+
+          const exactItem = items.some(item => {
+            const itemName = normalizeImportProductSearchText(
+              item?.productName || item?.name || ""
+            );
+
+            const itemPrice = parseCloudNumber(item?.unitPrice);
+
+            return itemName === normalizedName &&
+              Math.abs(itemPrice - unitPrice) < 0.000001;
+          });
+
+          const goodsTotal =
+            parseCloudNumber(
+              batch?.foreignTotal ??
+              batch?.totalGoodsForeign ??
+              batch?.totalPurchaseForeign ??
+              batch?.goodsForeignTotal
+            ) || getBatchItemsGoodsTotal(batch);
+
+          const shippingMY = parseCloudNumber(
+            batch?.shippingMY ??
+            batch?.overseasShippingMY ??
+            batch?.overseasFreightMY ??
+            batch?.shippingCostMY ??
+            batch?.malaysiaShipping
+          );
+
+          const rate = parseCloudNumber(
+            batch?.rate ??
+            batch?.exchangeRate
+          );
+
+          const inlandTransport = parseCloudNumber(
+            batch?.chinaTransportCost ??
+            batch?.domesticTransportCost ??
+            batch?.inlandTransportCost ??
+            batch?.localTransportCost ??
+            batch?.chinaFreight
+          );
+
+          const matchingPotCost = parseCloudNumber(
+            batch?.potCost ??
+            batch?.matchingPotCost ??
+            batch?.pairedPotCost ??
+            batch?.potTotalCost ??
+            batch?.potMatchingCost
+          );
+
+          const fixedSnapshotScore =
+            Number(batch?.costSnapshotLocked === true) * 10 +
+            Number(
+              String(batch?.costSnapshotVersion || "") === "3.02"
+            ) * 10 +
+            Number(
+              batch?.fixedShippingRate !== undefined &&
+              batch?.fixedShippingRate !== null
+            ) * 5 +
+            Number(
+              batch?.fixedInlandMiscPercent !== undefined &&
+              batch?.fixedInlandMiscPercent !== null
+            ) * 5;
+
+          const dataScore =
+            fixedSnapshotScore +
+            Number(goodsTotal > 0) +
+            Number(rate > 0) +
+            Number(shippingMY > 0) +
+            Number(inlandTransport > 0 || matchingPotCost > 0);
+
+          const updatedAt = Date.parse(
+            batch?.updatedAt || batch?.createdAt || ""
+          ) || 0;
+
+          return {
+            batch,
+            exactItem,
+            goodsTotal,
+            dataScore,
+            updatedAt
+          };
+        });
+
+        scored.sort((a, b) =>
+          Number(b.exactItem) - Number(a.exactItem) ||
+          b.dataScore - a.dataScore ||
+          b.updatedAt - a.updatedAt
+        );
+
+        return {
+          batch: scored[0].batch,
+          matchedItem: (Array.isArray(scored[0].batch?.items) ? scored[0].batch.items.find(item => {
+            const itemName = normalizeImportProductSearchText(item?.productName || item?.name || "");
+            const itemPrice = parseCloudNumber(item?.unitPrice);
+            return itemName === normalizedName && Math.abs(itemPrice - unitPrice) < 0.000001;
+          }) : null)
+        };
+      }
+
+      const records = [];
+      const seen = new Set();
+
+      const addRecord = source => {
+        const productName = String(
+          source?.productName || source?.name || ""
+        ).trim();
+        const category = String(source?.category || "盆栽").trim();
+        const importNumber = String(source?.importNumber || "").trim();
+        const currency = String(source?.currency || "")
+          .trim()
+          .toUpperCase();
+        const unitPrice = parseCloudNumber(source?.unitPrice);
+
+        if (
+          !productName ||
+          category !== "盆栽" ||
+          !currency ||
+          !Number.isFinite(unitPrice) ||
+          unitPrice <= 0
+        ) {
+          return;
+        }
+
+        const key = [
+          productName.toLocaleLowerCase(),
+          importNumber.toLocaleLowerCase(),
+          currency,
+          unitPrice
+        ].join("|");
+
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        const matchResult = resolveMatchingBatch(
+          importNumber,
+          productName,
+          unitPrice
+        );
+        const batch = matchResult?.batch || null;
+        const matchedItem = matchResult?.matchedItem || null;
+        // V6.0 DEBUG MAPPING
+        // Temporary diagnostic: expose matched import object in console.
+        window.__LL_DEBUG_MAPPING = {
+          source,
+          batch,
+          matchedItem,
+          importNumber,
+          productName,
+          unitPrice
+        };
+
+        const product =
+          productById.get(String(source?.productId || "")) ||
+          productByName.get(productName.toLocaleLowerCase()) ||
+          null;
+
+        // V6.0: Import batch is the source of truth for import cost fields.
+        // Product/import rows may contain unitPrice only and must not override rate.
+        const rate =
+          parseCloudNumber(matchedItem?.rate) ||
+          parseCloudNumber(matchedItem?.exchangeRate) ||
+          parseCloudNumber(batch?.rate) ||
+          parseCloudNumber(batch?.exchangeRate) ||
+          parseCloudNumber(batch?.fixedRate) ||
+          parseCloudNumber(source?.rate) ||
+          parseCloudNumber(source?.exchangeRate) ||
+          parseCloudNumber(source?.fixedRate) ||
+          0;
+
+        const inlandTransport = parseCloudNumber(
+          batch?.chinaTransportCost ??
+          batch?.domesticTransportCost ??
+          batch?.inlandTransportCost ??
+          batch?.localTransportCost ??
+          batch?.chinaFreight ??
+          0
+        );
+
+        const matchingPotCost = parseCloudNumber(
+          batch?.potCost ??
+          batch?.matchingPotCost ??
+          batch?.pairedPotCost ??
+          batch?.potTotalCost ??
+          batch?.potMatchingCost ??
+          0
+        );
+
+        const inlandCost = inlandTransport + matchingPotCost;
+
+        const itemsGoodsTotal = batch
+          ? getBatchItemsGoodsTotal(batch)
+          : 0;
+
+        const storedBatchGoodsTotal = batch
+          ? parseCloudNumber(
+              batch?.originalGoodsTotalForeign ??
+              batch?.foreignTotal ??
+              batch?.totalGoodsForeign ??
+              batch?.totalPurchaseForeign ??
+              batch?.goodsForeignTotal ??
+              0
+            )
+          : 0;
+
+        // The saved batch total is the same value displayed by the import
+        // system as “整批货款总额”, so it is the primary source of truth.
+        // Product-row summation is only a fallback when the batch total is empty.
+        const purchaseTotal =
+          storedBatchGoodsTotal > 0
+            ? storedBatchGoodsTotal
+            : itemsGoodsTotal;
+
+        // 内地杂费比例 =
+        // （内地运输＋打木架＋搭配花盆费用）÷ 整批货款总额
+        const calculatedInlandMiscPercent =
+          purchaseTotal > 0
+            ? inlandCost / purchaseTotal * 100
+            : 0;
+
+        const hasFixedInlandMiscPercent =
+          source?.fixedInlandMiscPercent !== undefined &&
+          source?.fixedInlandMiscPercent !== null &&
+          String(source.fixedInlandMiscPercent).trim() !== "";
+
+        const hasBatchFixedInlandMiscPercent =
+          batch?.fixedInlandMiscPercent !== undefined &&
+          batch?.fixedInlandMiscPercent !== null &&
+          String(batch.fixedInlandMiscPercent).trim() !== "";
+
+        const storedInlandMiscPercent = parseCloudNumber(
+          source?.inlandMiscPercent ??
+          source?.inlandFeePercent ??
+          source?.domesticMiscPercent
+        );
+
+        const itemFixedInlandMiscPercent =
+          parseCloudNumber(source?.fixedInlandMiscPercent);
+
+        const itemHistoricalInlandMiscPercent =
+          parseCloudNumber(
+            source?.inlandMiscPercent ??
+            source?.inlandFeePercent ??
+            source?.domesticMiscPercent
+          );
+
+        const batchFixedInlandMiscPercent =
+          parseCloudNumber(batch?.fixedInlandMiscPercent);
+
+        const batchHistoricalInlandMiscPercent =
+          parseCloudNumber(batch?.inlandMiscPercent);
+
+        // V6.0: 内地杂费比例必须读取进口资料固定值。
+        // 不因为库存变化、平均成本变化重新反推比例。
+        const batchStoredInlandMiscPercent =
+          parseCloudNumber(
+            batch?.inlandMiscPercent ??
+            batch?.inlandMiscRate ??
+            batch?.inlandMiscPercentage
+          );
+
+        const inlandMiscPercent =
+          batchStoredInlandMiscPercent > 0
+            ? batchStoredInlandMiscPercent
+            : itemFixedInlandMiscPercent > 0
+              ? itemFixedInlandMiscPercent
+              : itemHistoricalInlandMiscPercent > 0
+                ? itemHistoricalInlandMiscPercent
+                : batchFixedInlandMiscPercent > 0
+                  ? batchFixedInlandMiscPercent
+                  : batchHistoricalInlandMiscPercent > 0
+                    ? batchHistoricalInlandMiscPercent
+                    : calculatedInlandMiscPercent;
+
+        records.push({
+          id: String(source?.id || key),
+          productId: String(source?.productId || ""),
+          productName,
+          category,
+          importNumber,
+          unitPrice,
+          currency,
+          rate,
+          averageCostRM: parseCloudNumber(product?.averageCost ?? source?.averageCostRM),
+          fixedUnitCostRM: parseCloudNumber(
+            source?.fixedUnitCostRM ??
+            source?.unitCost
+          ),
+          costSnapshotVersion: String(
+            source?.costSnapshotVersion ??
+            batch?.costSnapshotVersion ??
+            ""
+          ),
+          costSnapshotLocked:
+            source?.costSnapshotLocked === true ||
+            batch?.costSnapshotLocked === true,
+          shippingRate: (() => {
+            // V6.0: Batch 是进口成本唯一来源，库存变化不能重新计算比例。
+            const batchStoredShippingRate =
+              parseCloudNumber(
+                batch?.shippingRate ??
+                batch?.overseasShippingRate ??
+                batch?.overseasFreightRate
+              );
+            if (batchStoredShippingRate > 0) {
+              return batchStoredShippingRate;
+            }
+
+            const batchFixedShippingRate =
+              parseCloudNumber(batch?.fixedShippingRate);
+            if (batchFixedShippingRate > 0) {
+              return batchFixedShippingRate;
+            }
+
+            const itemHistoricalShippingRate =
+              parseCloudNumber(
+                source?.shippingRate ??
+                source?.overseasShippingRate
+              );
+            if (itemHistoricalShippingRate > 0) {
+              return itemHistoricalShippingRate;
+            }
+
+            return batch
+              ? getCloudBatchShippingRate(batch)
+              : 0;
+          })(),
+          inlandMiscPercent,
+          batchGoodsTotal: purchaseTotal,
+          batchInlandCost: inlandCost,
+          updatedAt: String(
+            source?.updatedAt || source?.createdAt || ""
+          )
+        });
+      };
+
+      imports.forEach(addRecord);
+      batches.forEach(batch => {
+        (Array.isArray(batch?.items) ? batch.items : [])
+          .forEach(item => addRecord({
+            ...item,
+            importNumber:
+              item?.importNumber || batch?.importNumber || "",
+            currency: item?.currency || batch?.currency || "",
+            rate: item?.rate || batch?.rate || 0
+          }));
+      });
+
+      records.sort((a, b) =>
+        a.productName.localeCompare(
+          b.productName,
+          "zh-Hans-CN",
+          { numeric: true, sensitivity: "base" }
+        )
+      );
+
+      return records;
+    }
+
+    async function refreshImportProductsFromCloud() {
+      const status = document.getElementById("importProductStatus");
+
+      try {
+        if (status) {
+          status.classList.remove("error");
+          status.textContent = "正在读取进口系统产品…";
+        }
+
+        const response = await fetch(IMPORT_SYSTEM_CLOUD_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            action: "pull",
+            knownRevision: 0,
+            hasLocalData: false,
+            forceFull: true
+          }),
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (
+          !data?.ok ||
+          !Array.isArray(data.products) ||
+          !Array.isArray(data.imports) ||
+          !Array.isArray(data.batches)
+        ) {
+          throw new Error(data?.error || "云端资料不完整");
+        }
+
+        const records = buildCloudImportProductRecords(data);
+
+        localStorage.setItem(
+          IMPORT_UNIT_PRICE_KEY,
+          JSON.stringify({
+            version: 18,
+            exportedAt: new Date().toISOString(),
+            records
+          })
+        );
+
+        renderImportProductOptions();
+        return records.length;
+      } catch (error) {
+        renderImportProductOptions();
+
+        const localRecords = readImportUnitPriceRecords();
+        if (!localRecords.length && status) {
+          status.classList.add("error");
+          status.textContent =
+            "无法读取产品，请确认网络及进口系统云端同步";
+        }
+
+        console.warn("读取进口系统云端产品失败", error);
+        return localRecords.length;
+      }
+    }
+
+    let importProductRecords = [];
+    let visibleImportProductRecords = [];
+
+    function readImportUnitPriceRecords() {
+      try {
+        const payload = JSON.parse(
+          localStorage.getItem(IMPORT_UNIT_PRICE_KEY) || "null"
+        );
+
+        return Array.isArray(payload?.records)
+          ? payload.records.filter(record =>
+              record &&
+              record.category === "盆栽" &&
+              Number(record.pricingUnitPrice || record.unitPrice) > 0 &&
+              String(record.currency || "").trim()
+            )
+          : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function formatOriginalUnitPrice(value) {
+      return Number(value).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatAverageCostRM(value) {
+      return `RM ${Number(value || 0).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
+    }
+
+    function normalizeImportProductSearchText(value) {
+      return String(value || "")
+        .normalize("NFKC")
+        .toLocaleLowerCase()
+        .replace(/[\s\u3000\-_./\\,，、:：;；()（）[\]【】{}"'`~!！?？@#$%^&*+=|<>]+/g, "");
+    }
+
+    function extractImportProductCodes(value) {
+      const source = String(value || "")
+        .normalize("NFKC")
+        .toLocaleLowerCase();
+
+      return source.match(/[a-z]{1,6}[0-9][a-z0-9]*/g) || [];
+    }
+
+    function isExactProductCodeQuery(value) {
+      const query = normalizeImportProductSearchText(value);
+      return /^[a-z]{1,6}[0-9][a-z0-9]*$/.test(query);
+    }
+
+    function unorderedImportProductMatch(sourceValue, queryValue) {
+      const source = normalizeImportProductSearchText(sourceValue);
+      const query = normalizeImportProductSearchText(queryValue);
+
+      if (!query) return true;
+
+      // V5.1：型号搜索必须完整相同。
+      // 例如 BX580 只匹配 BX580，不再误配 BX1680、BX780、BX980。
+      if (isExactProductCodeQuery(query)) {
+        return extractImportProductCodes(sourceValue)
+          .some(code => code === query);
+      }
+
+      if (source.includes(query)) return true;
+
+      // 中文关键词保留不按字序搜索：例如“高提根”和“提根高”都能找到。
+      // 英文、数字或中英混合查询不再采用逐字乱序匹配，避免无关结果。
+      if (!/^[\p{Script=Han}]+$/u.test(query)) {
+        return false;
+      }
+
+      const counts = new Map();
+      Array.from(source).forEach(character => {
+        counts.set(character, (counts.get(character) || 0) + 1);
+      });
+
+      return Array.from(query).every(character => {
+        const count = counts.get(character) || 0;
+        if (count < 1) return false;
+        counts.set(character, count - 1);
+        return true;
+      });
+    }
+
+    function getImportProductRecordKey(record) {
+      return [
+        String(record?.productName || ""),
+        String(record?.importNumber || ""),
+        String(record?.currency || ""),
+        String(record?.unitPrice || "")
+      ].join("|");
+    }
+
+    function closeImportProductOptions() {
+      const input = document.getElementById("importProductSearch");
+      const options = document.getElementById("importProductOptions");
+      const backdrop = document.getElementById("mobileProductBackdrop");
+
+      if (options) options.hidden = true;
+      if (backdrop) backdrop.remove();
+      if (input) input.setAttribute("aria-expanded", "false");
+    }
+
+    function openImportProductOptions() {
+      const input = document.getElementById("importProductSearch");
+      const options = document.getElementById("importProductOptions");
+      const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+      if (isMobile && input) {
+        input.readOnly = true;
+        input.blur();
+      }
+
+      renderImportProductOptions();
+
+      if (isMobile && !document.getElementById("mobileProductBackdrop")) {
+        const backdrop = document.createElement("div");
+        backdrop.id = "mobileProductBackdrop";
+        backdrop.className = "mobile-product-backdrop";
+        document.body.appendChild(backdrop);
+      }
+
+      if (options) options.hidden = false;
+      if (input) input.setAttribute("aria-expanded", "true");
+
+      if (isMobile) {
+        requestAnimationFrame(() => {
+          const mobileSearch =
+            document.getElementById("mobileImportProductSearch");
+          mobileSearch?.focus({ preventScroll: true });
+        });
+      }
+    }
+
+    function ensureMobileImportSearchUI(options) {
+      if (!window.matchMedia("(max-width: 600px)").matches) {
+        return options;
+      }
+
+      let searchWrap =
+        options.querySelector(".mobile-product-search-wrap");
+      let searchInput =
+        document.getElementById("mobileImportProductSearch");
+      let list =
+        options.querySelector(".import-product-list");
+
+      if (!searchWrap) {
+        searchWrap = document.createElement("div");
+        searchWrap.className = "mobile-product-search-wrap";
+
+        const row = document.createElement("div");
+        row.className = "mobile-product-search-row";
+
+        searchInput = document.createElement("input");
+        searchInput.id = "mobileImportProductSearch";
+        searchInput.className = "mobile-product-search";
+        searchInput.type = "text";
+        searchInput.autocomplete = "off";
+        searchInput.autocapitalize = "off";
+        searchInput.spellcheck = false;
+        searchInput.placeholder = "输入中文或产品编号搜索";
+
+        const closeButton = document.createElement("button");
+        closeButton.id = "mobileProductClose";
+        closeButton.className = "mobile-product-close";
+        closeButton.type = "button";
+        closeButton.textContent = "×";
+        closeButton.setAttribute("aria-label", "关闭产品列表");
+
+        row.appendChild(searchInput);
+        row.appendChild(closeButton);
+        searchWrap.appendChild(row);
+        options.appendChild(searchWrap);
+      }
+
+      if (!list) {
+        list = document.createElement("div");
+        list.className = "import-product-list";
+        options.appendChild(list);
+      }
+
+      return list;
+    }
+
+    function renderImportProductOptions() {
+      const searchInput = document.getElementById("importProductSearch");
+      const options = document.getElementById("importProductOptions");
+      const status = document.getElementById("importProductStatus");
+      if (!options || !status) return;
+
+      const isMobile =
+        window.matchMedia("(max-width: 600px)").matches;
+      const mobileSearchInput =
+        document.getElementById("mobileImportProductSearch");
+
+      const keyword = String(
+        isMobile && mobileSearchInput
+          ? mobileSearchInput.value
+          : searchInput?.value || ""
+      ).trim();
+
+      importProductRecords = readImportUnitPriceRecords();
+      visibleImportProductRecords = importProductRecords.filter(record => {
+        const searchable = [
+          record.productName,
+          record.importNumber,
+          record.currency,
+          record.unitPrice,
+          record.pricingUnitPrice,
+          record.averageCostRM,
+          record.shippingRate,
+          record.inlandMiscPercent
+        ].join(" ");
+
+        return unorderedImportProductMatch(searchable, keyword);
+      });
+
+      const listTarget = isMobile
+        ? ensureMobileImportSearchUI(options)
+        : options;
+
+      const previousScrollTop = listTarget.scrollTop;
+
+      listTarget.innerHTML = visibleImportProductRecords.length
+        ? visibleImportProductRecords.map((record, index) => {
+            const name = String(record.productName || "未命名产品");
+            const number = String(record.importNumber || "无进口编号");
+            const currency = String(record.currency || "").toUpperCase();
+            const originalUnitPrice =
+              formatOriginalUnitPrice(record.unitPrice);
+            const averageCost =
+              formatAverageCostRM(record.averageCostRM);
+            const inland =
+              ` · 内地杂费 ${Number(
+                record.inlandMiscPercent || 0
+              ).toFixed(2)}%`;
+            const freight =
+              ` · 海外运费 ${Number(
+                record.shippingRate || 0
+              ).toFixed(2)}%`;
+
+            return `<button type="button" class="import-product-option" role="option" data-record-index="${index}">
+              <strong>${name}</strong>
+              <span>${number} · 原单价 ${currency} ${originalUnitPrice} · 平均成本 ${averageCost}${inland}${freight}</span>
+            </button>`;
+          }).join("")
+        : '<div class="import-product-empty">没有符合的产品</div>';
+
+      listTarget.scrollTop = previousScrollTop;
+
+      if (isMobile && mobileSearchInput) {
+        requestAnimationFrame(() => {
+          if (!options.hidden) {
+            mobileSearchInput.focus({ preventScroll: true });
+          }
+        });
+      }
+
+      status.classList.toggle(
+        "error",
+        importProductRecords.length === 0
+      );
+
+      status.textContent = !importProductRecords.length
+        ? "暂无资料，请先打开进口成本与库存系统并完成同步"
+        : keyword
+          ? `找到 ${visibleImportProductRecords.length} / ${importProductRecords.length} 笔产品资料`
+          : `已读取 ${importProductRecords.length} 笔产品资料`;
+    }
+
+
+    function applySelectedImportProduct(record) {
+      if (!record) return;
+
+      const searchInput = document.getElementById("importProductSearch");
+      const priceInput = document.getElementById("price_display");
+      const hiddenPrice = document.getElementById("price");
+      const currencyInput = document.getElementById("currency");
+      const rateInput = document.getElementById("rate");
+      const freightInput = document.getElementById("freight");
+      const inlandMiscInput = document.getElementById("inlandMisc");
+      const localInput = document.getElementById("local");
+      const currency = String(
+        record.currency ??
+        record.money ??
+        ""
+      ).toUpperCase();
+
+      const unitPrice = Number(
+        record.unitPrice ??
+        record.price ??
+        record.purchasePrice ??
+        0
+      );
+
+      // Import System fields compatibility
+      // Accept both decimal (0.395) and percentage (39.5)
+      const normalizePercent = value => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return 0;
+        return n > 0 && n < 1 ? n * 100 : n;
+      };
+
+      const inlandMiscPercent = normalizePercent(
+        record.inlandMiscPercent ??
+        record.inlandMiscRate ??
+        record.inlandFeePercent ??
+        record.domesticMiscPercent ??
+        record["内地杂费比例"] ??
+        0
+      );
+
+      const recordRate = Number(
+        record.rate ??
+        record.exchangeRate ??
+        record.fxRate ??
+        0
+      );
+
+      const shippingRate = normalizePercent(
+        record.shippingRate ??
+        record.overseasShippingRate ??
+        record.fixedShippingRate ??
+        record["海外运费比例"] ??
+        0
+      );
+
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
+
+      if (searchInput) searchInput.value = String(record.productName || "");
+      priceInput.value = formatOriginalUnitPrice(unitPrice);
+      hiddenPrice.value = String(unitPrice);
+
+      if (
+        currencyInput &&
+        Array.from(currencyInput.options).some(option => option.value === currency)
+      ) {
+        currencyInput.value = currency;
+      }
+
+      if (rateInput) {
+        const finalRate = Number.isFinite(recordRate) && recordRate > 0
+          ? recordRate
+          : defaultRates[currency];
+        rateInput.value = Number(finalRate || 0).toFixed(6);
+      }
+
+      if (freightInput) {
+        const finalFreight = Number.isFinite(shippingRate) && shippingRate > 0
+          ? shippingRate
+          : parseFloat(defaultFreight[currency]) || 0;
+        freightInput.value = `${Number(finalFreight || 0).toFixed(2)}%`;
+      }
+
+      if (inlandMiscInput) {
+        inlandMiscInput.value =
+          `${(
+            Number.isFinite(inlandMiscPercent) && inlandMiscPercent > 0
+              ? inlandMiscPercent
+              : 0
+          ).toFixed(2)}%`;
+      }
+
+      if (localInput) localInput.value = defaultLocal[currency] ?? 0;
+
+      clearCalculationResult(true);
+      autoSetPotVND();
+      closeImportProductOptions();
+
+      const status = document.getElementById("importProductStatus");
+      if (status) {
+        status.classList.remove("error");
+        status.textContent =
+          `${record.productName} · 原购买单价 ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
+          ` · 内地杂费 ${(
+            Number.isFinite(inlandMiscPercent) ? inlandMiscPercent : 0
+          ).toFixed(2)}%` +
+          ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}` +
+          ` · 内地杂费 ${Number(record.inlandMiscPercent || 0).toFixed(2)}%` +
+          ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}% 已带入，可继续手动修改`;
+      }
+    }
+
+    // =======================
+    // ✅ 计算器功能
+    // =======================
+    function toggleCalc(open) {
+      const modal = document.getElementById('calcModal');
+      modal.style.display = open ? 'block' : 'none';
+    }
+
+    function calcKey(k) {
+      const d = document.getElementById('calcDisplay');
+      d.value = (d.value || '') + k;
+    }
+
+    function calcClear() {
+      document.getElementById('calcDisplay').value = '';
+    }
+
+    function calcBack() {
+      const d = document.getElementById('calcDisplay');
+      d.value = (d.value || '').slice(0, -1);
+    }
+
+    function calcEval() {
+  const d = document.getElementById('calcDisplay');
+  const expr = (d.value || '').trim();
+  if (!expr) return;
+
+  try {
+    if (!/^[0-9+\-*/().\s%]+$/.test(expr)) {
+      alert('只允许输入数字和 + - * / ( ) . %');
+      return;
+    }
+
+    let safeExpr = expr;
+
+    safeExpr = safeExpr.replace(
+      /(\d+(?:\.\d+)?)\s*\+\s*(\d+(?:\.\d+)?)%/g,
+      '($1+($1*$2/100))'
+    );
+
+    safeExpr = safeExpr.replace(
+      /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)%/g,
+      '($1-($1*$2/100))'
+    );
+
+    safeExpr = safeExpr.replace(
+      /(\d+(?:\.\d+)?)%/g,
+      '($1/100)'
+    );
+
+    const result = Function('"use strict"; return (' + safeExpr + ')')();
+
+    if (typeof result === 'number' && isFinite(result)) {
+      d.value = Number(result.toFixed(6));
+    } else {
+      alert('计算结果无效');
+    }
+  } catch (e) {
+    alert('表达式有误，请检查');
+  }
+}
+    function fillImportCost() {
+      const d = document.getElementById('calcDisplay');
+      const val = parseFloat(d.value);
+      if (isNaN(val)) {
+        alert('请先算出一个数字结果');
+        return;
+      }
+      const input = document.getElementById('price_display');
+      input.value = String(val);
+      formatDisplayPrice();
+      toggleCalc(false);
+    }
+
+    // =======================
+    // ✅ VND 花盆成本自动逻辑
+    // =======================
+    function autoSetPotVND() {
+      const currency = document.getElementById('currency').value;
+      const potInput = document.getElementById('pot');
+
+      if (currency !== "VND") {
+        potInput.value = "0";
+        return;
+      }
+
+      const price = parseFloat(document.getElementById('price').value) || 0;
+
+      if (price >= 4000000) {
+        potInput.value = "105";
+      } else if (price >= 1000000) {
+        potInput.value = "55";
+      } else {
+        potInput.value = "35";
+      }
+    }
+
+    function setRate() {
+      const currency = document.getElementById('currency').value;
+      document.getElementById('rate').value = defaultRates[currency].toFixed(6);
+      document.getElementById('freight').value = `${(parseFloat(defaultFreight[currency]) || 0).toFixed(2)}%`;
+      document.getElementById('local').value = defaultLocal[currency];
+      autoSetPotVND();
+    }
+
+    function autoDetectCurrency() {
+      const raw = parseFloat(document.getElementById('price').value) || 0;
+      const currency = document.getElementById('currency');
+      const target = raw >= 100000 ? 'VND' : 'CNY';
+
+      if (currency.value !== target) {
+        currency.value = target;
+        setRate();
+      }
+    }
+function clearCalculationResult(resetActualPrice = false) {
+  if (resetActualPrice) {
+    document.getElementById('actualPrice').value = "0";
+  }
+
+  document.getElementById('receivedDisplay').value = "0";
+  document.getElementById('actualNetProfitDisplay').value = "0";
+  document.getElementById('actualMarginDisplay').value = "0";
+  document.getElementById('result').innerHTML = "";
+}
+
+function updateRawPrice() {
+  const input = document.getElementById('price_display');
+  const raw = parseFloat(
+    input.value.replace(/,/g, '').replace(/[^\d.]/g, '')
+  ) || 0;
+
+  document.getElementById('price').value = raw;
+
+  // 更换进口成本时，清空旧售价和旧计算结果。
+  clearCalculationResult(true);
+
+  autoSetPotVND();
+  autoDetectCurrency();
+}
+
+    function formatDisplayPrice() {
+      const input = document.getElementById('price_display');
+      const raw = parseFloat(input.value.replace(/,/g, '').replace(/[^\d.]/g, ''));
+      if (!isNaN(raw)) {
+        const parts = raw.toFixed(2).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        input.value = parts.join('.');
+      }
+      updateRawPrice();
+    }
+function formatActualPrice() {
+  const input = document.getElementById('actualPrice');
+
+  const value = parseFloat(
+    input.value.replace(/,/g, '')
+  );
+
+  if (!isNaN(value)) {
+    input.value = value.toFixed(2);
+  }
+}
+    function normalizeInlandMiscInput() {
+      const input = document.getElementById("inlandMisc");
+      if (!input) return;
+
+      let value = parseFloat(
+        String(input.value || "")
+          .replace("%", "")
+          .replace(/,/g, "")
+          .replace(/[^\d.]/g, "")
+      );
+
+      if (!Number.isFinite(value)) value = 0;
+      value = Math.min(99.99, Math.max(0, value));
+      input.value = `${value.toFixed(2)}%`;
+    }
+
+    function normalizeFreightInput() {
+      const input = document.getElementById("freight");
+      if (!input) return;
+
+      let value = parseFloat(
+        String(input.value || "")
+          .replace("%", "")
+          .replace(/,/g, "")
+          .replace(/[^\d.]/g, "")
+      );
+
+      if (!Number.isFinite(value)) value = 0;
+      value = Math.min(88.88, Math.max(0, value));
+      input.value = `${value.toFixed(2)}%`;
+    }
+
+    function calculate() {
+      const price = parseFloat(document.getElementById('price').value);
+      const freightInput = document.getElementById('freight').value.trim();
+      const rate = parseFloat(document.getElementById('rate').value);
+      const inlandMiscInput =
+        document.getElementById('inlandMisc').value.trim();
+      const inlandMisc =
+        inlandMiscInput === ""
+          ? 0
+          : (
+              parseFloat(inlandMiscInput.replace('%', '')) || 0
+            ) / 100;
+      const pot = parseFloat(document.getElementById('pot').value) || 0;
+      const moss = parseFloat(document.getElementById('moss').value) || 0;
+      const local = parseFloat(document.getElementById('local').value) || 0;
+      const actualPrice =
+  parseFloat(
+    document.getElementById('actualPrice').value
+      .replace(/,/g, '')
+      .replace(/[^\d.]/g, '')
+  ) || 0;
+           if (isNaN(price) || isNaN(rate) || rate <= 0) {
+        alert('请输入有效的进口成本单价和汇率');
+        return;
+      }
+
+      const freight = freightInput === ""
+        ? 0.2
+        : freightInput.includes('%')
+          ? (parseFloat(freightInput.replace('%', '')) / 100)
+          : (parseFloat(freightInput) / 100);
+const rmCost =
+  (price * (1 + inlandMisc) / rate) * (1 + freight) +
+  pot +
+  moss +
+  local;
+
+let receivedAmount = 0;
+
+if (actualPrice > 0) {
+  // 实际售价 ≤ RM500 扣 RM50；超过 RM500 扣 RM80
+  const deliveryCost = actualPrice <= 500 ? 50 : 80;
+
+  // 到手金额 = 实际售价 - 10%佣金 - 运费
+  receivedAmount = actualPrice * 0.9 - deliveryCost;
+
+  // 实际净利 = 到手金额 - 实际成本
+  const actualNetProfit = receivedAmount - rmCost;
+
+  // 利润率 = 实际净利 ÷ 实际售价 × 100%
+  const actualMargin = (actualNetProfit / actualPrice) * 100;
+
+  document.getElementById('receivedDisplay').value = receivedAmount.toFixed(2);
+  document.getElementById('actualNetProfitDisplay').value = actualNetProfit.toFixed(2);
+  document.getElementById('actualMarginDisplay').value = actualMargin.toFixed(2) + "%";
+} else {
+  document.getElementById('receivedDisplay').value = "0";
+  document.getElementById('actualNetProfitDisplay').value = "0";
+  document.getElementById('actualMarginDisplay').value = "0";
+}
+                const prices = {
+        "20%": rmCost * 1.26 * 1.12,
+        "30%": rmCost * 1.43 * 1.12,
+        "40%": rmCost * 1.67 * 1.12,
+        "45%": rmCost * 1.82 * 1.12,
+        "50%": rmCost * 2.00 * 1.12,
+        "55%": rmCost * 2.23 * 1.12,
+        "60%": rmCost * 2.51 * 1.12
+      };
+
+     const costX3 = rmCost * 3;
+      let html = `<div class="entry" style="font-size:20px;">
+  <strong>实际成本：</strong>RM ${rmCost.toFixed(2)}
+  <span style="color:#8B0000; font-weight:bold;">
+    &nbsp;&nbsp;x3: RM ${costX3.toFixed(2)}
+  </span>
+</div>`;
+
+      html += `<div class="entry" style="font-size: 20px;"><strong>20% 批发售价：</strong>RM ${prices["20%"].toFixed(2)}</div>`;
+      html += `<div class="entry" style="font-size: 20px; color: #0d47a1; font-weight: bold;"><strong>30% 利润售价：</strong>RM ${prices["30%"].toFixed(2)}</div>`;
+      html += `<div class="entry" style="font-size: 20px;"><strong>40% 利润售价：</strong>RM ${prices["40%"].toFixed(2)}</div>`;
+     const price45Raw = prices["45%"];
+const price45 =
+  Math.floor(price45Raw / 100) * 100 + 80;
+
+html += `<div class="entry" style="font-size:20px; color:#0d47a1; font-weight:bold;">
+  <strong>45% 利润售价：</strong>RM ${price45.toFixed(2)}
+</div>`;
+      const retail50Raw = prices["50%"];
+const retail50 =
+  Math.floor(retail50Raw / 100) * 100 + 80;
+
+const streamerPrice = retail50;
+
+// 扣 10% 佣金
+const afterCommission = streamerPrice * 0.9;
+
+// 售价 ≤500 扣 RM50，>500 扣 RM80
+const deliveryCost = streamerPrice <= 500 ? 50 : 80;
+
+// 直播净利
+const profitAfterCommission =
+  afterCommission - deliveryCost - rmCost;
+
+// 利润率
+const marginPercent =
+  (profitAfterCommission / streamerPrice) * 100;
+
+html += `
+<div class="entry" style="font-size:20px; color:red; font-weight:bold;">
+  <strong>50% 门市/直播售价：</strong>RM ${retail50.toFixed(2)}
+</div>
+<div class="entry" style="font-size:18px; color:#000; font-weight:900;">
+  （直播净利：RM ${profitAfterCommission.toFixed(2)}
+  ｜利润率：${marginPercent.toFixed(2)}%）
+</div>
+`;
+      const price55Raw = prices["55%"];
+
+const price55 =
+  Math.floor(price55Raw / 100) * 100 + 80;
+
+html += `<div class="entry" style="font-size:20px; color:#0d47a1; font-weight:bold;">
+  <strong>55% 利润售价：</strong>RM ${price55.toFixed(2)}
+</div>`;
+     const price60Raw = prices["60%"];
+
+const price60 =
+  Math.floor(price60Raw / 100) * 100 + 80;
+const price60Discount = price60 * 0.75 / 2;
+      html += `<div class="entry" style="font-size: 20px; color: red; font-weight: bold;">
+        <strong>60% Fair售价：</strong>RM ${price60.toFixed(2)}
+        <span style="color: #0d47a1; font-weight: bold; font-size: 20px;"> / ${price60Discount.toFixed(2)}</span>
+      </div>`;
+
+      html += `<div class="entry" style="font-size: 20px; font-weight: bold; color: #000;">
+        （门市最多 -10% ，Fair 最多 -25%）
+      </div>`;
+
+      document.getElementById('result').innerHTML = html;
+    }
+document.addEventListener('keydown', function(e) {
+  const modal = document.getElementById('calcModal');
+  const d = document.getElementById('calcDisplay');
+
+  if (modal.style.display !== 'block') return;
+
+  if (e.ctrlKey || e.metaKey || e.altKey) {
+    if (e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      d.focus();
+      d.select();
+    }
+    return;
+  }
+
+  if (/^[0-9]$/.test(e.key) || ['+','-','*','/','.','%','(',')'].includes(e.key)) {
+    e.preventDefault();
+
+    if (d.selectionStart !== d.selectionEnd) {
+      d.value =
+        d.value.slice(0, d.selectionStart) +
+        e.key +
+        d.value.slice(d.selectionEnd);
+    } else {
+      calcKey(e.key);
+    }
+  }
+
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+
+    if (d.selectionStart !== d.selectionEnd) {
+      d.value =
+        d.value.slice(0, d.selectionStart) +
+        d.value.slice(d.selectionEnd);
+    } else {
+      calcBack();
+    }
+  }
+
+  if (e.key === 'Delete') {
+    e.preventDefault();
+
+    if (d.selectionStart !== d.selectionEnd) {
+      d.value =
+        d.value.slice(0, d.selectionStart) +
+        d.value.slice(d.selectionEnd);
+    } else {
+      calcClear();
+    }
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    calcEval();
+  }
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    toggleCalc(false);
+  }
+});
+    window.addEventListener("storage", event => {
+  if (event.key === PRICING_SETTINGS_KEY) {
+    applyPricingSettings(readSavedPricingSettings());
+  }
+
+  if (event.key === IMPORT_UNIT_PRICE_KEY) {
+    renderImportProductOptions();
+  }
+});
+
+window.onload = () => {
+  applyPricingSettings(readSavedPricingSettings());
+  setRate();
+  autoSetPotVND();
+  autoDetectCurrency();
+
+  renderImportProductOptions();
+  refreshImportProductsFromCloud();
+
+  const importProductSearch =
+    document.getElementById("importProductSearch");
+  const importProductToggle =
+    document.getElementById("importProductToggle");
+  const importProductOptions =
+    document.getElementById("importProductOptions");
+
+  if (window.matchMedia("(max-width: 600px)").matches && importProductSearch) {
+    importProductSearch.readOnly = true;
+  } else {
+    importProductSearch?.addEventListener("focus", openImportProductOptions);
+    importProductSearch?.addEventListener("input", () => {
+      renderImportProductOptions();
+      openImportProductOptions();
+    });
+  }
+
+  importProductSearch?.addEventListener("click", event => {
+    event.preventDefault();
+    openImportProductOptions();
+  });
+
+  importProductToggle?.addEventListener("click", event => {
+    event.preventDefault();
+    if (importProductOptions?.hidden) {
+      if (!window.matchMedia("(max-width: 600px)").matches) {
+        importProductSearch?.focus();
+      }
+      openImportProductOptions();
+    } else {
+      closeImportProductOptions();
+    }
+  });
+
+  let lastImportProductChoiceAt = 0;
+
+  const chooseImportProduct = event => {
+    const option = event.target.closest(".import-product-option");
+    if (!option) return;
+
+    const now = Date.now();
+    if (now - lastImportProductChoiceAt < 350) return;
+    lastImportProductChoiceAt = now;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const record =
+      visibleImportProductRecords[Number(option.dataset.recordIndex)];
+
+    applySelectedImportProduct(record);
+  };
+
+  let productTouchStartX = 0;
+  let productTouchStartY = 0;
+  let productTouchMoved = false;
+
+  importProductOptions?.addEventListener("touchstart", event => {
+    if (!event.touches || event.touches.length !== 1) return;
+    productTouchStartX = event.touches[0].clientX;
+    productTouchStartY = event.touches[0].clientY;
+    productTouchMoved = false;
+  }, { passive: true });
+
+  importProductOptions?.addEventListener("touchmove", event => {
+    if (!event.touches || event.touches.length !== 1) return;
+
+    const dx = Math.abs(event.touches[0].clientX - productTouchStartX);
+    const dy = Math.abs(event.touches[0].clientY - productTouchStartY);
+
+    if (dx > 8 || dy > 8) {
+      productTouchMoved = true;
+    }
+  }, { passive: true });
+
+  importProductOptions?.addEventListener("click", event => {
+    if (productTouchMoved) {
+      event.preventDefault();
+      event.stopPropagation();
+      productTouchMoved = false;
+      return;
+    }
+
+    chooseImportProduct(event);
+  });
+
+  let mobileImportSearchComposing = false;
+  let mobileImportSearchTimer = 0;
+
+  importProductOptions?.addEventListener(
+    "compositionstart",
+    event => {
+      if (event.target.id !== "mobileImportProductSearch") return;
+      mobileImportSearchComposing = true;
+    }
+  );
+
+  importProductOptions?.addEventListener(
+    "compositionend",
+    event => {
+      if (event.target.id !== "mobileImportProductSearch") return;
+      mobileImportSearchComposing = false;
+      clearTimeout(mobileImportSearchTimer);
+      mobileImportSearchTimer = window.setTimeout(() => {
+        renderImportProductOptions();
+      }, 80);
+    }
+  );
+
+  importProductOptions?.addEventListener("input", event => {
+    if (event.target.id !== "mobileImportProductSearch") return;
+    if (mobileImportSearchComposing || event.isComposing) return;
+
+    clearTimeout(mobileImportSearchTimer);
+    mobileImportSearchTimer = window.setTimeout(() => {
+      renderImportProductOptions();
+    }, 140);
+  });
+
+  document.addEventListener("pointerdown", event => {
+    const isMobile =
+      window.matchMedia("(max-width: 600px)").matches;
+
+    if (isMobile) return;
+
+    const insidePicker = event.target.closest(".import-product-picker");
+    const insideOptions = event.target.closest("#importProductOptions");
+
+    if (!insidePicker && !insideOptions) {
+      closeImportProductOptions();
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (
+      event.target.id === "mobileProductClose" ||
+      event.target.id === "mobileProductBackdrop"
+    ) {
+      event.preventDefault();
+      closeImportProductOptions();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !importProductOptions?.hidden) {
+      event.preventDefault();
+      closeImportProductOptions();
+      importProductSearch?.blur();
+    }
+  });
+
+  ['currency', 'rate', 'inlandMisc', 'freight', 'pot', 'moss', 'local']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const clearOldQuote = () => clearCalculationResult(true);
+      el.addEventListener('input', clearOldQuote);
+      el.addEventListener('change', clearOldQuote);
+    });
+
+  const actualPriceInput = document.getElementById('actualPrice');
+  if (actualPriceInput) {
+    actualPriceInput.addEventListener('input', () => {
+      clearCalculationResult(false);
+    });
+  }
+
+  const refreshImportProducts = () => {
+    const mobileSearch =
+      document.getElementById("mobileImportProductSearch");
+    const isTyping =
+      mobileSearch &&
+      document.activeElement === mobileSearch;
+
+    if (isTyping) return;
+
+    refreshImportProductsFromCloud();
+    renderImportProductOptions();
+
+    if (!document.getElementById("importProductOptions")?.hidden) {
+      openImportProductOptions();
+    }
+  };
+
+  window.addEventListener("pageshow", () => {
+    document.getElementById("mobileProductBackdrop")?.remove();
+    const options = document.getElementById("importProductOptions");
+    if (options) options.hidden = true;
+    refreshImportProducts();
+  });
+  window.addEventListener("focus", refreshImportProducts);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshImportProducts();
+  });
+};
+  </script>
+</body>
+</html>
