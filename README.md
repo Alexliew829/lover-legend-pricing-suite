@@ -1,4 +1,16 @@
-# 成本与售价计算器 V6.5
+# V7.0 Import Mapping Rewrite
+
+- 重写「从进口系统选择产品」资料映射。
+- 以 importNumber 为主键找 Batch；产品名称只用于 Batch 内 Item 辅助匹配。
+- Batch 固定提供汇率、内地杂费比例、海外运费比例。
+- Imports 只提供产品名称、原购买单价等产品行资料，旧资料仅作 fallback。
+- 删除以单价作为 Batch 必须匹配条件的逻辑。
+- Debug 改为跟随实际选中的产品，不再显示建立资料库时最后一笔产品。
+- 找不到 Batch 时明确显示 Batch 未匹配，不再假装是正确的固定成本资料。
+- 版本与 Service Worker cache 全面更新至 V7.0。
+
+
+# 成本与售价计算器 V7.0
 
 - 产品 Item 固定海外运费比例优先于 Batch。
 - 产品 Item 历史海外运费比例作为第二优先。
