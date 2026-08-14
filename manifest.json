@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V7.0",
+  "name": "Lover Legend Pricing Suite V7.1",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "Cost, sales and bonsai price calculators with import product search"
+  "description": "V7.1 Cost, sales and bonsai price calculators with Import Cost System V4.4 mapping"
 }
