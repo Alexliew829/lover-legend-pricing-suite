@@ -1,0 +1,8 @@
+V7.2 audit passed.
+- Manual freight normalization cap: 99.99%.
+- No 88.88 hard cap remains in cost-calculator/index.html.
+- Import Mapping debug panel removed.
+- Visible calculator version: V7.2.
+- VERSION: V7.2.
+- Manifest: V7.2.
+- Service Worker cache: V7.2.

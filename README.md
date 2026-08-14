@@ -1,9 +1,10 @@
-# Lover Legend Pricing Suite V7.1
+# Lover Legend Pricing Suite V7.2
 
-## V7.1 Import System V4.4 Mapping Fix
+## V7.2
 
-- 不修改 Import Cost System V4.4。
-- 成本与售价计算器改为读取 Import Cost System V4.4 实际正在使用的 Apps Script Web App。
-- V7.0 仍连接旧 Import System endpoint，所以会继续收到旧版/错位字段。
-- 保留 importNumber → Batch 的映射逻辑。
-- 更新页面版本、VERSION、manifest 与 Service Worker cache 至 V7.1。
+- 修正手动输入海外运费比例时被强制压回 88.88% 的问题。
+- 手动输入海外运费比例现在允许到 99.99%，因此 90.00% 会正常保留。
+- 从进口系统选择产品时，仍照进口资料自动带入海外运费比例。
+- 未选择进口产品时，用户手动修改海外运费比例不会再自动跳回 88.88%。
+- 移除页面下方 Import Mapping / Debug 显示。
+- 更新页面版本、VERSION、manifest、iframe cache 参数及 Service Worker cache 至 V7.2。
