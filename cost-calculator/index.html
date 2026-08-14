@@ -6,8 +6,7 @@
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <title>成本与售价计算器 - 情人传奇</title>
   <style>
-    .ll-debug-panel{display:none;white-space:pre-wrap;background:#fff7e6;border:1px dashed #d46b08;padding:10px;margin-top:10px;font-size:12px;}
-    body {
+body {
   font-family: sans-serif;
   padding: 8px 15px;
       background-color: #f9f9f9;
@@ -437,7 +436,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.1</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.2</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1040,7 +1039,7 @@
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.1: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V7.2: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1534,20 +1533,6 @@
     function applySelectedImportProduct(record) {
       if (!record) return;
 
-      const debugPanel = document.getElementById("llDebugPanel");
-      if (debugPanel) {
-        debugPanel.style.display = "block";
-        const debug = record.mappingDebug || {};
-        debugPanel.textContent =
-          "=== IMPORT MAPPING V7.1 ===\n" +
-          "Status: " + (record.mappingStatus || "") + "\n" +
-          "Import: " + (record.importNumber || "") + "\n" +
-          "Product: " + (record.productName || "") + "\n" +
-          "Unit Price: " + (record.unitPrice || "") + "\n\n" +
-          "Batch:\n" + JSON.stringify(debug.batch || null, null, 2) +
-          "\n\nMatched Item:\n" +
-          JSON.stringify(debug.matchedItem || null, null, 2);
-      }
 
       const searchInput = document.getElementById("importProductSearch");
       const priceInput = document.getElementById("price_display");
@@ -1848,7 +1833,7 @@ function formatActualPrice() {
       );
 
       if (!Number.isFinite(value)) value = 0;
-      value = Math.min(88.88, Math.max(0, value));
+      value = Math.min(99.99, Math.max(0, value));
       input.value = `${value.toFixed(2)}%`;
     }
 
@@ -2271,5 +2256,5 @@ window.onload = () => {
   });
 };
   </script>
-<div id="llDebugPanel" class="ll-debug-panel"></div></body>
+</body>
 </html>

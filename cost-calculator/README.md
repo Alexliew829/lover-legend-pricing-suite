@@ -1,7 +1,6 @@
-# 成本与售价计算器 V7.1
+# 成本与售价计算器 V7.2
 
-V7.1 对接 Import Cost System V4.4 当前正式 Apps Script endpoint。
-
-- 不修改进口系统。
-- 修正 Pricing Suite 仍连接旧 endpoint 的问题。
-- 保留 V7.0 importNumber / Batch 映射逻辑。
+- 手动海外运费比例上限由 88.88% 修正为 99.99%。
+- 输入 90% 后离开输入框会保留为 90.00%。
+- 移除 Import Mapping Debug 面板。
+- Import System V4.4 映射逻辑保持不变。
