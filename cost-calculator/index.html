@@ -437,7 +437,7 @@
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.0</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.1</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -767,7 +767,7 @@
       "loverLegendPricingSuiteImportUnitPrices";
 
     const IMPORT_SYSTEM_CLOUD_URL =
-      "https://script.google.com/macros/s/AKfycbyQ75Ug_K0bS9Wq_CHxr6XBhuLgRlokvDsSGH_Wzip9wYyIKA2HYVea3ZSv5vmjzrdr/exec";
+      "https://script.google.com/macros/s/AKfycbxWKdEC7vy_7pZ2_CPie-9L5DeIofPggZlLuwB7gW-31HqWXEOxshtCR-HB-m5qLYS6/exec";
 
     function getCloudBatchShippingRate(batch) {
       const hasFixedShippingRate =
@@ -1040,7 +1040,7 @@
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.0: importNumber is the primary relationship key.
+        // V7.1: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1539,7 +1539,7 @@
         debugPanel.style.display = "block";
         const debug = record.mappingDebug || {};
         debugPanel.textContent =
-          "=== IMPORT MAPPING V7.0 ===\n" +
+          "=== IMPORT MAPPING V7.1 ===\n" +
           "Status: " + (record.mappingStatus || "") + "\n" +
           "Import: " + (record.importNumber || "") + "\n" +
           "Product: " + (record.productName || "") + "\n" +

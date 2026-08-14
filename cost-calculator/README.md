@@ -1,9 +1,7 @@
-# CostNSalesPrice
+# 成本与售价计算器 V7.1
 
-Version V7.0 — mobile stacked layout; version references synchronized.
+V7.1 对接 Import Cost System V4.4 当前正式 Apps Script endpoint。
 
-
-## V7.0
-- 修正内地杂费比例：内地杂费 ÷ 整批货款总额。
-- 例：\(878 + 2,060\) ÷ 5,200 = 56.50%。
-- 其他成本与售价公式保持不变。
+- 不修改进口系统。
+- 修正 Pricing Suite 仍连接旧 endpoint 的问题。
+- 保留 V7.0 importNumber / Batch 映射逻辑。
