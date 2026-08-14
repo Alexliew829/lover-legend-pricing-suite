@@ -1,10 +1,11 @@
-# Lover Legend Pricing Suite V7.2
+# Lover Legend Pricing Suite V7.3
 
-## V7.2
+## Version / Cache Management Fix
 
-- 修正手动输入海外运费比例时被强制压回 88.88% 的问题。
-- 手动输入海外运费比例现在允许到 99.99%，因此 90.00% 会正常保留。
-- 从进口系统选择产品时，仍照进口资料自动带入海外运费比例。
-- 未选择进口产品时，用户手动修改海外运费比例不会再自动跳回 88.88%。
-- 移除页面下方 Import Mapping / Debug 显示。
-- 更新页面版本、VERSION、manifest、iframe cache 参数及 Service Worker cache 至 V7.2。
+- 修正外层 index.html 仍引用旧缓存参数的问题。
+- 成本与售价计算器 iframe 强制使用 `v=7.3-force-refresh`。
+- Service Worker 注册参数强制使用 `v=7.3-force-refresh`。
+- Service Worker Cache 名称更新为 V7.3。
+- 页面显示、VERSION、manifest、README 全部统一为 V7.3。
+- 手动海外运费比例可输入到 99.99%，90% 不会跳回 88.88%。
+- Import Mapping / Debug 面板保持移除。

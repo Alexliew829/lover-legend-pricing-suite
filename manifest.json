@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V7.2",
+  "name": "Lover Legend Pricing Suite V7.3",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V7.2 manual freight input fix and clean production mapping UI"
+  "description": "V7.3 force-refresh release with corrected version/cache management"
 }
