@@ -1,9 +1,9 @@
-const CACHE = "lover-legend-pricing-v7.4-minimum-price";
+const CACHE = "lover-legend-pricing-v7.5-fresh-minimum-price";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=7.4-minimum-price",
+  "./cost-calculator/index.html?v=7.5-fresh-minimum-price",
   "./bonsai-price-calculator/index.html?v=3.6"
 ];
 

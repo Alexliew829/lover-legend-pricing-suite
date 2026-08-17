@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.4</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.5</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1039,7 +1039,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.4: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V7.5: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1132,7 +1132,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V7.4: one-way mapping only.
+          // V7.5: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1195,7 +1195,14 @@ body {
       return records;
     }
 
+    let importProductsRefreshPromise = null;
+
     async function refreshImportProductsFromCloud() {
+      if (importProductsRefreshPromise) {
+        return importProductsRefreshPromise;
+      }
+
+      importProductsRefreshPromise = (async () => {
       const status = document.getElementById("importProductStatus");
 
       try {
@@ -1259,6 +1266,35 @@ body {
         console.warn("读取进口系统云端产品失败", error);
         return localRecords.length;
       }
+      })();
+
+      try {
+        return await importProductsRefreshPromise;
+      } finally {
+        importProductsRefreshPromise = null;
+      }
+    }
+
+    function findFreshImportProductRecord(record) {
+      if (!record) return null;
+
+      const targetKey = getImportProductRecordKey(record);
+      const records = readImportUnitPriceRecords();
+
+      return records.find(item =>
+        getImportProductRecordKey(item) === targetKey
+      ) || null;
+    }
+
+    async function applySelectedImportProductFresh(record) {
+      if (!record) return;
+
+      // V7.5: keep fast cached rendering, but when a product is selected,
+      // wait for the latest cloud pull before applying minimumPrice.
+      await refreshImportProductsFromCloud();
+
+      const latestRecord = findFreshImportProductRecord(record) || record;
+      applySelectedImportProduct(latestRecord);
     }
 
     let importProductRecords = [];
@@ -1638,7 +1674,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V7.4: minimumPrice is only the initial value for actualPrice.
+      // V7.5: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2133,7 +2169,7 @@ window.onload = () => {
     const record =
       visibleImportProductRecords[Number(option.dataset.recordIndex)];
 
-    applySelectedImportProduct(record);
+    applySelectedImportProductFresh(record);
   };
 
   let productTouchStartX = 0;
