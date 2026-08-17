@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1039,7 +1039,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.3: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V7.4: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1131,6 +1131,14 @@ body {
           fixedUnitCostRM: parseCloudNumber(
             source?.fixedUnitCostRM ??
             source?.unitCost
+          ),
+          // V7.4: one-way mapping only.
+          // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
+          // No write-back API exists in this calculator.
+          minimumPrice: parseCloudNumber(
+            product?.minimumPrice ??
+            source?.minimumPrice ??
+            0
           ),
           mappingStatus: batch ? "BATCH_MATCHED" : "BATCH_MISSING",
           mappingDebug: {
@@ -1230,7 +1238,7 @@ body {
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 18,
+            version: 19,
             exportedAt: new Date().toISOString(),
             records
           })
@@ -1542,6 +1550,7 @@ body {
       const freightInput = document.getElementById("freight");
       const inlandMiscInput = document.getElementById("inlandMisc");
       const localInput = document.getElementById("local");
+      const actualPriceInput = document.getElementById("actualPrice");
       const currency = String(
         record.currency ??
         record.money ??
@@ -1587,6 +1596,8 @@ body {
         0
       );
 
+      const minimumPrice = Number(record.minimumPrice ?? 0);
+
       if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
 
       if (searchInput) searchInput.value = String(record.productName || "");
@@ -1626,6 +1637,18 @@ body {
       if (localInput) localInput.value = defaultLocal[currency] ?? 0;
 
       clearCalculationResult(true);
+
+      // V7.4: minimumPrice is only the initial value for actualPrice.
+      // The user can edit actualPrice freely afterward.
+      // This is intentionally one-way: there is no write-back to Import System.
+      if (actualPriceInput) {
+        const safeMinimumPrice =
+          Number.isFinite(minimumPrice) && minimumPrice >= 0
+            ? minimumPrice
+            : 0;
+        actualPriceInput.value = safeMinimumPrice.toFixed(2);
+      }
+
       autoSetPotVND();
       closeImportProductOptions();
 
@@ -1638,6 +1661,7 @@ body {
             Number.isFinite(inlandMiscPercent) ? inlandMiscPercent : 0
           ).toFixed(2)}%` +
           ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}` +
+          ` · 最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
       }

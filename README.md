@@ -1,11 +1,12 @@
-# Lover Legend Pricing Suite V7.3
+# Lover Legend Pricing Suite V7.4
 
-## Version / Cache Management Fix
+## V7.4 Minimum Price Mapping
 
-- 修正外层 index.html 仍引用旧缓存参数的问题。
-- 成本与售价计算器 iframe 强制使用 `v=7.3-force-refresh`。
-- Service Worker 注册参数强制使用 `v=7.3-force-refresh`。
-- Service Worker Cache 名称更新为 V7.3。
-- 页面显示、VERSION、manifest、README 全部统一为 V7.3。
-- 手动海外运费比例可输入到 99.99%，90% 不会跳回 88.88%。
-- Import Mapping / Debug 面板保持移除。
+- 从进口成本与库存系统 Products 读取 `minimumPrice`。
+- 选择产品后，把 `minimumPrice` 单向填入「实际售价」。
+- `minimumPrice = 0` 时，实际售价自动显示 `0.00`。
+- 自动带出的实际售价仍可手动修改。
+- 手动修改实际售价不会写回进口成本与库存系统。
+- 不改变现有成本、利润率、售价、运费、汇率及其他计算逻辑。
+- Import Mapping / Debug 面板继续保持移除。
+- 页面版本、VERSION、manifest、iframe cache 与 Service Worker cache 全部更新为 V7.4。
