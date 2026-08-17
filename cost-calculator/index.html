@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.6</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.7</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1039,7 +1039,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.6: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V7.7: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1132,7 +1132,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V7.6: one-way mapping only.
+          // V7.7: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1196,6 +1196,9 @@ body {
     }
 
     let importProductsRefreshPromise = null;
+    let importProductsCloudReady = false;
+    let activeImportProductKey = "";
+    let actualPriceManuallyEdited = false;
 
     async function refreshImportProductsFromCloud() {
       if (importProductsRefreshPromise) {
@@ -1251,6 +1254,7 @@ body {
           })
         );
 
+        importProductsCloudReady = true;
         renderImportProductOptions();
         return records.length;
       } catch (error) {
@@ -1286,34 +1290,61 @@ body {
       ) || null;
     }
 
-    async function applySelectedImportProductFresh(record) {
+    function applyLatestMinimumPriceOnly(record) {
       if (!record) return;
 
-      // V7.6:
-      // 1) React to the click immediately so the picker never feels "unclickable".
-      // 2) Pull latest cloud data.
-      // 3) Apply the freshest matching record (especially minimumPrice).
-      const searchInput = document.getElementById("importProductSearch");
+      const actualPriceInput = document.getElementById("actualPrice");
+      if (!actualPriceInput) return;
+
+      const minimumPrice = Number(record.minimumPrice ?? 0);
+      const safeMinimumPrice =
+        Number.isFinite(minimumPrice) && minimumPrice >= 0
+          ? minimumPrice
+          : 0;
+
+      actualPriceInput.value = safeMinimumPrice.toFixed(2);
+      clearCalculationResult(false);
+
       const status = document.getElementById("importProductStatus");
-
-      if (searchInput) {
-        searchInput.value = String(record.productName || "");
-      }
-      closeImportProductOptions();
-
       if (status) {
         status.classList.remove("error");
-        status.textContent = "正在读取最新产品资料…";
+        status.textContent =
+          `已更新最新最低售价 RM ${safeMinimumPrice.toFixed(2)}`;
       }
+    }
 
-      try {
-        await refreshImportProductsFromCloud();
-      } catch (error) {
-        console.warn("选择产品时刷新云端资料失败，使用当前缓存", error);
-      }
+    function applySelectedImportProductFast(record) {
+      if (!record) return;
 
-      const latestRecord = findFreshImportProductRecord(record) || record;
-      applySelectedImportProduct(latestRecord);
+      // V7.7 Fast Sync:
+      // - Select immediately from current memory/cache.
+      // - Do NOT wait for network before filling the calculator.
+      // - If the one background cloud sync is still running, refresh only
+      //   minimumPrice after it finishes.
+      // - Never overwrite a price the user has manually edited.
+      const freshestLocal = findFreshImportProductRecord(record) || record;
+      activeImportProductKey = getImportProductRecordKey(freshestLocal);
+      actualPriceManuallyEdited = false;
+
+      applySelectedImportProduct(freshestLocal);
+
+      if (importProductsCloudReady) return;
+
+      const selectedKey = activeImportProductKey;
+
+      void refreshImportProductsFromCloud()
+        .then(() => {
+          if (selectedKey !== activeImportProductKey) return;
+          if (actualPriceManuallyEdited) return;
+
+          const latestRecord =
+            findFreshImportProductRecord(freshestLocal) || freshestLocal;
+
+          applyLatestMinimumPriceOnly(latestRecord);
+        })
+        .catch(error => {
+          console.warn("后台更新最新最低售价失败，保留当前资料", error);
+        });
     }
 
     let importProductRecords = [];
@@ -1693,7 +1724,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V7.6: minimumPrice is only the initial value for actualPrice.
+      // V7.7: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2188,7 +2219,7 @@ window.onload = () => {
     const record =
       visibleImportProductRecords[Number(option.dataset.recordIndex)];
 
-    void applySelectedImportProductFresh(record);
+    applySelectedImportProductFast(record);
   };
 
   let productTouchStartX = 0;
@@ -2302,11 +2333,12 @@ window.onload = () => {
   const actualPriceInput = document.getElementById('actualPrice');
   if (actualPriceInput) {
     actualPriceInput.addEventListener('input', () => {
+      actualPriceManuallyEdited = true;
       clearCalculationResult(false);
     });
   }
 
-  const refreshImportProducts = () => {
+  const rerenderImportProducts = () => {
     const mobileSearch =
       document.getElementById("mobileImportProductSearch");
     const isTyping =
@@ -2315,7 +2347,6 @@ window.onload = () => {
 
     if (isTyping) return;
 
-    refreshImportProductsFromCloud();
     renderImportProductOptions();
 
     if (!document.getElementById("importProductOptions")?.hidden) {
@@ -2323,15 +2354,17 @@ window.onload = () => {
     }
   };
 
+  // V7.7: only one background cloud sync per page load.
+  // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
     const options = document.getElementById("importProductOptions");
     if (options) options.hidden = true;
-    refreshImportProducts();
+    rerenderImportProducts();
   });
-  window.addEventListener("focus", refreshImportProducts);
+  window.addEventListener("focus", rerenderImportProducts);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshImportProducts();
+    if (!document.hidden) rerenderImportProducts();
   });
 };
   </script>

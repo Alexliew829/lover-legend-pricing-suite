@@ -1,0 +1,9 @@
+V7.7 audit passed.
+
+- Immediate cached selection: yes
+- One background cloud sync per page load: yes
+- First selection does not wait for network: yes
+- Latest minimumPrice applied after background sync: yes
+- Manual actualPrice blocks background overwrite: yes
+- No push/save write-back added: yes
+- Version/cache markers: V7.7

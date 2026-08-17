@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V7.6",
+  "name": "Lover Legend Pricing Suite V7.7",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V7.6 fixes product selection responsiveness while still applying latest minimumPrice"
+  "description": "V7.7 Fast Sync: instant product selection with one background import sync"
 }
