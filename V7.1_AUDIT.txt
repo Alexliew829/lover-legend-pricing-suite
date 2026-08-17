@@ -1,8 +1,0 @@
-V7.1 audit passed.
-- Pricing Suite now uses the endpoint defined by Import Cost System V4.4 Frontend/js/sync.js.
-- Old Pricing Suite Import endpoint removed.
-- Page display version: V7.1.
-- VERSION: V7.1.
-- manifest: V7.1.
-- Service Worker cache/query: V7.1.
-- Import Cost System V4.4 reference files were not modified.
