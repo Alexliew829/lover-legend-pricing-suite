@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V7.5",
+  "name": "Lover Legend Pricing Suite V7.6",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V7.5 ensures first product selection uses latest minimumPrice from Import Cost System"
+  "description": "V7.6 fixes product selection responsiveness while still applying latest minimumPrice"
 }

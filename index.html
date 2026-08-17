@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=7.5-fresh-minimum-price"
+          src="cost-calculator/index.html?v=7.6-click-fresh-price"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -841,7 +841,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=7.5-fresh-minimum-price", { updateViaCache: "none" })
+          .register("sw.js?v=7.6-click-fresh-price", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
