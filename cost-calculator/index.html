@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V7.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -765,6 +765,10 @@ body {
     const IMPORT_UNIT_PRICE_KEY =
       "loverLegendPricingSuiteImportUnitPrices";
 
+    const IMPORT_SYSTEM_PRODUCTS_KEY = "importSystemProducts";
+    const IMPORT_SYSTEM_IMPORTS_KEY = "importSystemImports";
+    const IMPORT_SYSTEM_BATCHES_KEY = "importSystemBatches";
+
     const IMPORT_SYSTEM_CLOUD_URL =
       "https://script.google.com/macros/s/AKfycbxWKdEC7vy_7pZ2_CPie-9L5DeIofPggZlLuwB7gW-31HqWXEOxshtCR-HB-m5qLYS6/exec";
 
@@ -1039,7 +1043,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V7.7: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V7.8: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1132,7 +1136,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V7.7: one-way mapping only.
+          // V7.8: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1195,6 +1199,51 @@ body {
       return records;
     }
 
+    function readSharedImportSystemCollection(key) {
+      try {
+        const value = JSON.parse(localStorage.getItem(key) || "null");
+        return Array.isArray(value) ? value : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function syncImportProductsFromSharedLocalStorage() {
+      const products =
+        readSharedImportSystemCollection(IMPORT_SYSTEM_PRODUCTS_KEY);
+      const imports =
+        readSharedImportSystemCollection(IMPORT_SYSTEM_IMPORTS_KEY);
+      const batches =
+        readSharedImportSystemCollection(IMPORT_SYSTEM_BATCHES_KEY);
+
+      if (!products.length || !imports.length) {
+        return 0;
+      }
+
+      const records = buildCloudImportProductRecords({
+        products,
+        imports,
+        batches
+      });
+
+      if (!records.length) {
+        return 0;
+      }
+
+      localStorage.setItem(
+        IMPORT_UNIT_PRICE_KEY,
+        JSON.stringify({
+          version: 20,
+          exportedAt: new Date().toISOString(),
+          source: "import-system-local",
+          records
+        })
+      );
+
+      renderImportProductOptions();
+      return records.length;
+    }
+
     let importProductsRefreshPromise = null;
     let importProductsCloudReady = false;
     let activeImportProductKey = "";
@@ -1209,7 +1258,10 @@ body {
       const status = document.getElementById("importProductStatus");
 
       try {
-        if (status) {
+        const directLocalCount =
+          syncImportProductsFromSharedLocalStorage();
+
+        if (status && !directLocalCount) {
           status.classList.remove("error");
           status.textContent = "正在读取进口系统产品…";
         }
@@ -1248,7 +1300,7 @@ body {
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 19,
+            version: 20,
             exportedAt: new Date().toISOString(),
             records
           })
@@ -1316,16 +1368,19 @@ body {
     function applySelectedImportProductFast(record) {
       if (!record) return;
 
-      // V7.7 Fast Sync:
-      // - Select immediately from current memory/cache.
-      // - Do NOT wait for network before filling the calculator.
-      // - If the one background cloud sync is still running, refresh only
-      //   minimumPrice after it finishes.
-      // - Never overwrite a price the user has manually edited.
-      const freshestLocal = findFreshImportProductRecord(record) || record;
-      activeImportProductKey = getImportProductRecordKey(freshestLocal);
+      // V7.8 Direct Local Sync:
+      // Import System and Pricing Suite are under the same origin.
+      // Read Import System's own localStorage synchronously first.
+      syncImportProductsFromSharedLocalStorage();
+
+      const freshestLocal =
+        findFreshImportProductRecord(record) || record;
+
+      activeImportProductKey =
+        getImportProductRecordKey(freshestLocal);
       actualPriceManuallyEdited = false;
 
+      // Selection is immediate; network never blocks the click.
       applySelectedImportProduct(freshestLocal);
 
       if (importProductsCloudReady) return;
@@ -1337,13 +1392,20 @@ body {
           if (selectedKey !== activeImportProductKey) return;
           if (actualPriceManuallyEdited) return;
 
+          // Re-read Import System's shared local data after cloud fallback.
+          syncImportProductsFromSharedLocalStorage();
+
           const latestRecord =
-            findFreshImportProductRecord(freshestLocal) || freshestLocal;
+            findFreshImportProductRecord(freshestLocal) ||
+            freshestLocal;
 
           applyLatestMinimumPriceOnly(latestRecord);
         })
         .catch(error => {
-          console.warn("后台更新最新最低售价失败，保留当前资料", error);
+          console.warn(
+            "后台更新最新最低售价失败，保留本机最新资料",
+            error
+          );
         });
     }
 
@@ -1724,7 +1786,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V7.7: minimumPrice is only the initial value for actualPrice.
+      // V7.8: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2155,6 +2217,14 @@ document.addEventListener('keydown', function(e) {
     applyPricingSettings(readSavedPricingSettings());
   }
 
+  if (
+    event.key === IMPORT_SYSTEM_PRODUCTS_KEY ||
+    event.key === IMPORT_SYSTEM_IMPORTS_KEY ||
+    event.key === IMPORT_SYSTEM_BATCHES_KEY
+  ) {
+    syncImportProductsFromSharedLocalStorage();
+  }
+
   if (event.key === IMPORT_UNIT_PRICE_KEY) {
     renderImportProductOptions();
   }
@@ -2166,8 +2236,17 @@ window.onload = () => {
   autoSetPotVND();
   autoDetectCurrency();
 
-  renderImportProductOptions();
-  refreshImportProductsFromCloud();
+  const directLocalImportCount =
+    syncImportProductsFromSharedLocalStorage();
+
+  if (!directLocalImportCount) {
+    renderImportProductOptions();
+  }
+
+  // V7.8: cloud is a delayed background fallback, never a blocker.
+  window.setTimeout(() => {
+    void refreshImportProductsFromCloud();
+  }, 1200);
 
   const importProductSearch =
     document.getElementById("importProductSearch");
@@ -2354,17 +2433,26 @@ window.onload = () => {
     }
   };
 
-  // V7.7: only one background cloud sync per page load.
+  // V7.8: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
     const options = document.getElementById("importProductOptions");
     if (options) options.hidden = true;
+    syncImportProductsFromSharedLocalStorage();
     rerenderImportProducts();
   });
-  window.addEventListener("focus", rerenderImportProducts);
+
+  window.addEventListener("focus", () => {
+    syncImportProductsFromSharedLocalStorage();
+    rerenderImportProducts();
+  });
+
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) rerenderImportProducts();
+    if (!document.hidden) {
+      syncImportProductsFromSharedLocalStorage();
+      rerenderImportProducts();
+    }
   });
 };
   </script>
