@@ -1,0 +1,6 @@
+V7.5 audit passed.
+- first selection awaits latest pull
+- fresh record is re-resolved before apply
+- minimumPrice remains one-way to actualPrice
+- API action remains pull only
+- visible/version/manifest/cache all V7.5

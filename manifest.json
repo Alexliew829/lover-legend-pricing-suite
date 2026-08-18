@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V7.8",
+  "name": "Lover Legend Pricing Suite V7.9",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V7.8 Direct Local Sync: instant Import System localStorage mapping with cloud fallback"
+  "description": "V7.9 preserves selected minimumPrice when local cost inputs change"
 }

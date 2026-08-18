@@ -1,0 +1,6 @@
+V7.9 audit passed.
+- cost input listeners use clearCalculationResult(false)
+- selected minimumPrice/actualPrice is preserved
+- actualPrice remains manually editable
+- minimumPrice remains one-way; no push/save added
+- version/cache markers V7.9

@@ -1,17 +1,11 @@
-# Lover Legend Pricing Suite V7.8
+# Lover Legend Pricing Suite V7.9
 
-## V7.8 Direct Local Sync
+## V7.9 Keep Minimum Price
 
-- 直接读取同一浏览器中进口系统的 `importSystemProducts`、
-  `importSystemImports`、`importSystemBatches`。
-- 进口系统修改 minimumPrice 后，成本与售价计算器第一次选择产品
-  即可读取本机最新值，无需等待 Apps Script。
-- 选择产品不等待网络，保持即时响应。
-- Apps Script 云端同步只在后台作为 fallback。
-- 同一浏览器另一个标签页保存进口系统资料时，成本计算器通过
-  storage event 即时更新。
-- 用户手动修改「实际售价」后，后台不会覆盖。
-- minimumPrice -> 实际售价保持单向，不反写进口系统。
-- 不修改成本、利润率、运费、汇率和其他计算逻辑。
-- Apps Script 与 Google Sheet 不需要修改。
-- 所有版本及缓存标识更新为 V7.8。
+- 修正选择产品后，minimumPrice 已自动带入「实际售价」，但输入花盆成本、苔藓成本、本地运费、汇率、内地杂费或海外运费时，实际售价被重置为 0 的问题。
+- 现在修改这些成本字段，只清除旧计算结果，不会清除实际售价。
+- 例如产品最低售价 RM680.00：输入花盆 RM50、苔藓 RM20 后，实际售价仍保持 RM680.00。
+- 除非用户自己修改实际售价，系统不会改变这个值。
+- 保留 V7.8 Direct Local Sync 和 minimumPrice 单向映射逻辑。
+- Apps Script / Google Sheet 不需要修改。
+- 所有版本及缓存标识更新为 V7.9。
