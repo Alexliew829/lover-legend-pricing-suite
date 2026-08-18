@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=7.9-keep-minimum-price"
+          src="cost-calculator/index.html?v=8.0-stable-frame-resize"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -566,13 +566,38 @@
         if (!doc || !doc.documentElement) return;
 
         prepareFrame(frame);
-        frame.style.height = "1px";
+
+        // V8.0 Stable Frame Resize:
+        // Never collapse the iframe to 1px before measuring.
+        // That old technique caused the cost calculator to visibly "收起"
+        // on the first Calculate after selecting an imported product.
+        const currentHeight =
+          parseFloat(frame.style.height) ||
+          frame.getBoundingClientRect().height ||
+          0;
 
         requestAnimationFrame(() => {
-          const height = getDocumentHeight(doc);
-          if (height > 0) {
-            frame.style.height = `${Math.ceil(height) + 2}px`;
+          const measuredHeight = getDocumentHeight(doc);
+          if (!(measuredHeight > 0)) return;
+
+          const targetHeight = Math.ceil(measuredHeight) + 2;
+          const hasStableHeight = frame.dataset.llFrameFitted === "1";
+
+          // First fit: use the measured content height.
+          // Later fits: grow immediately when content expands, but never
+          // transiently shrink during import sync / calculation redraws.
+          // This prevents the one-time collapse while preserving all logic.
+          if (
+            !hasStableHeight ||
+            currentHeight <= 0 ||
+            targetHeight > currentHeight + 2
+          ) {
+            frame.style.height = `${targetHeight}px`;
+          } else if (!frame.style.height) {
+            frame.style.height = `${Math.max(targetHeight, currentHeight)}px`;
           }
+
+          frame.dataset.llFrameFitted = "1";
         });
       } catch (error) {
         // 同源 GitHub Pages 正常情况下可以自动调整。
@@ -841,7 +866,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=7.9-keep-minimum-price", { updateViaCache: "none" })
+          .register("sw.js?v=8.0-stable-frame-resize", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });

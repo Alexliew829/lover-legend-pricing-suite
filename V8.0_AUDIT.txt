@@ -1,0 +1,15 @@
+V8.0 audit passed.
+
+Stable iframe resize:
+- old frame.style.height = "1px" removed
+- ResizeObserver retained
+- first fit uses measured content height
+- later fits grow when needed but do not transiently shrink
+- import/product/calculation logic unchanged
+
+Version management:
+- visible calculator V8.0
+- VERSION V8.0
+- manifest V8.0
+- iframe query v=8.0-stable-frame-resize
+- service worker query/cache V8.0

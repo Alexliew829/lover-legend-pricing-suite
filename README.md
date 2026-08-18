@@ -1,11 +1,12 @@
-# Lover Legend Pricing Suite V7.9
+# Lover Legend Pricing Suite V8.0
 
-## V7.9 Keep Minimum Price
+## V8.0 Stable Frame Resize
 
-- 修正选择产品后，minimumPrice 已自动带入「实际售价」，但输入花盆成本、苔藓成本、本地运费、汇率、内地杂费或海外运费时，实际售价被重置为 0 的问题。
-- 现在修改这些成本字段，只清除旧计算结果，不会清除实际售价。
-- 例如产品最低售价 RM680.00：输入花盆 RM50、苔藓 RM20 后，实际售价仍保持 RM680.00。
-- 除非用户自己修改实际售价，系统不会改变这个值。
-- 保留 V7.8 Direct Local Sync 和 minimumPrice 单向映射逻辑。
-- Apps Script / Google Sheet 不需要修改。
-- 所有版本及缓存标识更新为 V7.9。
+- 修正第一次从「从进口系统选择产品」选产品后，第一次按「计算」时成本与售价计算器会瞬间收起的问题。
+- 根因是外层 iframe ResizeObserver 每次重算高度前先把 iframe 强制设为 1px。
+- V8.0 取消 1px 重置。
+- 第一次载入正常设定高度；之后内容增加时即时扩展，不会因进口资料同步/计算结果重绘而瞬间缩小。
+- 手动输入盆栽进口成本的原有行为保持不变。
+- 保留 V7.9 的 minimumPrice、Direct Local Sync、实际售价保护、成本/利润率/运费/汇率等全部逻辑。
+- Apps Script 与 Google Sheet 不需要修改。
+- 页面、VERSION、manifest、iframe cache、Service Worker cache 全部更新为 V8.0。
