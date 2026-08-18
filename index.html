@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.1-keep-results"
+          src="cost-calculator/index.html?v=8.1-stable-first-calculation"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -866,7 +866,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.1-keep-results", { updateViaCache: "none" })
+          .register("sw.js?v=8.1-stable-first-calculation", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });

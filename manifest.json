@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V8.1 preserves previous calculation results while local cost inputs are edited"
+  "description": "V8.1 stable first calculation: background import sync no longer clears results"
 }

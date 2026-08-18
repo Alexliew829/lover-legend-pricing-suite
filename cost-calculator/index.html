@@ -1355,7 +1355,11 @@ body {
           : 0;
 
       actualPriceInput.value = safeMinimumPrice.toFixed(2);
-      clearCalculationResult(false);
+
+      // V8.1 Final:
+      // This update can happen after the first Calculate because cloud sync
+      // finishes asynchronously. Never clear the calculation result here.
+      // Otherwise the first result disappears before the user can read it.
 
       const status = document.getElementById("importProductStatus");
       if (status) {
@@ -2404,16 +2408,12 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V8.1: changing cost inputs must preserve both:
-      // 1) selected minimumPrice / actualPrice
-      // 2) the previous calculation result block (actual cost / x3 / price tiers)
-      // The old result remains visible until the user presses Calculate again.
-      const keepPreviousResult = () => {
-        // Intentionally do not call clearCalculationResult().
-      };
-
-      el.addEventListener('input', keepPreviousResult);
-      el.addEventListener('change', keepPreviousResult);
+      // V8.1 Final:
+      // User changes to cost data invalidate the old calculation result,
+      // so hide/clear the old result, but preserve actualPrice/minimumPrice.
+      const clearOldQuote = () => clearCalculationResult(false);
+      el.addEventListener('input', clearOldQuote);
+      el.addEventListener('change', clearOldQuote);
     });
 
   const actualPriceInput = document.getElementById('actualPrice');
