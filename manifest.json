@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V8.0",
+  "name": "Lover Legend Pricing Suite V8.1",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V8.0 stable iframe resize: prevents first-calculation collapse after selecting an imported product"
+  "description": "V8.1 preserves previous calculation results while local cost inputs are edited"
 }

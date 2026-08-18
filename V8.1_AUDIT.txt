@@ -1,0 +1,15 @@
+V8.1 audit passed.
+
+Cost input behavior:
+- currency/rate/inlandMisc/freight/pot/moss/local no longer call clearCalculationResult()
+- previous result block remains visible until Calculate is pressed again
+- actualPrice/minimumPrice remains preserved
+- manual actualPrice editing remains supported
+- no Import System write-back added
+
+Version:
+- visible V8.1
+- VERSION V8.1
+- manifest V8.1
+- iframe query v=8.1-keep-results
+- service worker query/cache V8.1

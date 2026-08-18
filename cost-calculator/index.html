@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V8.0</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V8.1</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1043,7 +1043,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V8.0: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V8.1: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1136,7 +1136,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V8.0: one-way mapping only.
+          // V8.1: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1368,7 +1368,7 @@ body {
     function applySelectedImportProductFast(record) {
       if (!record) return;
 
-      // V8.0 Direct Local Sync:
+      // V8.1 Direct Local Sync:
       // Import System and Pricing Suite are under the same origin.
       // Read Import System's own localStorage synchronously first.
       syncImportProductsFromSharedLocalStorage();
@@ -1786,7 +1786,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V8.0: minimumPrice is only the initial value for actualPrice.
+      // V8.1: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2243,7 +2243,7 @@ window.onload = () => {
     renderImportProductOptions();
   }
 
-  // V8.0: cloud is a delayed background fallback, never a blocker.
+  // V8.1: cloud is a delayed background fallback, never a blocker.
   window.setTimeout(() => {
     void refreshImportProductsFromCloud();
   }, 1200);
@@ -2404,11 +2404,16 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V8.0: changing cost inputs must keep the selected product's
-      // minimumPrice / actualPrice. Only calculated result fields are cleared.
-      const clearOldQuote = () => clearCalculationResult(false);
-      el.addEventListener('input', clearOldQuote);
-      el.addEventListener('change', clearOldQuote);
+      // V8.1: changing cost inputs must preserve both:
+      // 1) selected minimumPrice / actualPrice
+      // 2) the previous calculation result block (actual cost / x3 / price tiers)
+      // The old result remains visible until the user presses Calculate again.
+      const keepPreviousResult = () => {
+        // Intentionally do not call clearCalculationResult().
+      };
+
+      el.addEventListener('input', keepPreviousResult);
+      el.addEventListener('change', keepPreviousResult);
     });
 
   const actualPriceInput = document.getElementById('actualPrice');
@@ -2435,7 +2440,7 @@ window.onload = () => {
     }
   };
 
-  // V8.0: only one background cloud sync per page load.
+  // V8.1: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
