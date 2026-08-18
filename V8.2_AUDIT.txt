@@ -1,0 +1,10 @@
+V8.2 audit passed.
+
+Changes:
+- Product info remains visible after latest minimumPrice background refresh.
+- Product detail is displayed in two lines:
+  line 1: product / original unit price / inland misc / average cost
+  line 2: minimum price / overseas shipping / Batch mapping status
+- Removed replacement status text "已更新最新最低售价".
+- No Import System write-back added; minimumPrice mapping remains one-way.
+- Updated visible version, VERSION, manifest, iframe cache token, service worker registration token and cache name to V8.2.

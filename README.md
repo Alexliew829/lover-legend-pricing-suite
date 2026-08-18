@@ -1,6 +1,6 @@
-# Lover Legend Pricing Suite V8.1
+# Lover Legend Pricing Suite V8.2
 
-## V8.1 Stable First Calculation
+## V8.2 Stable First Calculation
 
 正确行为：
 - 从进口系统选择产品 → 按「计算」→ 结果保持显示，不会被后台同步清掉。
@@ -10,4 +10,4 @@
 - 后台 minimumPrice 同步只更新实际售价，不再调用 clearCalculationResult()。
 - 保留 Direct Local Sync、minimumPrice 单向映射、iframe 稳定高度和其他计算逻辑。
 - Apps Script / Google Sheet 不需要修改。
-- 版本保持 V8.1，但 iframe / Service Worker cache token 已重新更新，确保 GitHub Pages 取得本次修正版。
+- 版本保持 V8.2，但 iframe / Service Worker cache token 已重新更新，确保 GitHub Pages 取得本次修正版。

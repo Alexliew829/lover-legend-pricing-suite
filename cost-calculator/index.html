@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V8.1</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V8.2</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1043,7 +1043,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V8.1: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V8.2: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1136,7 +1136,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V8.1: one-way mapping only.
+          // V8.2: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1356,7 +1356,7 @@ body {
 
       actualPriceInput.value = safeMinimumPrice.toFixed(2);
 
-      // V8.1 Final:
+      // V8.2 Final:
       // This update can happen after the first Calculate because cloud sync
       // finishes asynchronously. Never clear the calculation result here.
       // Otherwise the first result disappears before the user can read it.
@@ -1364,15 +1364,26 @@ body {
       const status = document.getElementById("importProductStatus");
       if (status) {
         status.classList.remove("error");
-        status.textContent =
-          `已更新最新最低售价 RM ${safeMinimumPrice.toFixed(2)}`;
+        const currency = String(record.currency || document.getElementById("currency")?.value || "CNY").toUpperCase();
+        const unitPrice = Number(record.unitPrice ?? record.originalUnitPrice ?? 0);
+        const inlandMiscPercent = Number(record.inlandMiscPercent ?? record.inlandMiscRate ?? 0);
+        const shippingRate = Number(record.shippingRate ?? 0);
+        const line1 =
+          `${record.productName || ""} · 原购买单价 ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
+          ` · 内地杂费 ${(Number.isFinite(inlandMiscPercent) ? inlandMiscPercent : 0).toFixed(2)}%` +
+          ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}`;
+        const line2 =
+          `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
+          ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
+          ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
+        status.innerHTML = `${line1}<br>${line2}`;
       }
     }
 
     function applySelectedImportProductFast(record) {
       if (!record) return;
 
-      // V8.1 Direct Local Sync:
+      // V8.2 Direct Local Sync:
       // Import System and Pricing Suite are under the same origin.
       // Read Import System's own localStorage synchronously first.
       syncImportProductsFromSharedLocalStorage();
@@ -1790,7 +1801,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V8.1: minimumPrice is only the initial value for actualPrice.
+      // V8.2: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -1807,15 +1818,17 @@ body {
       const status = document.getElementById("importProductStatus");
       if (status) {
         status.classList.remove("error");
-        status.textContent =
+        const line1 =
           `${record.productName} · 原购买单价 ${currency} ${formatOriginalUnitPrice(unitPrice)}` +
           ` · 内地杂费 ${(
             Number.isFinite(inlandMiscPercent) ? inlandMiscPercent : 0
           ).toFixed(2)}%` +
-          ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}` +
-          ` · 最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
+          ` · 平均成本 ${formatAverageCostRM(record.averageCostRM)}`;
+        const line2 =
+          `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
+        status.innerHTML = `${line1}<br>${line2}`;
       }
     }
 
@@ -2247,7 +2260,7 @@ window.onload = () => {
     renderImportProductOptions();
   }
 
-  // V8.1: cloud is a delayed background fallback, never a blocker.
+  // V8.2: cloud is a delayed background fallback, never a blocker.
   window.setTimeout(() => {
     void refreshImportProductsFromCloud();
   }, 1200);
@@ -2408,7 +2421,7 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V8.1 Final:
+      // V8.2 Final:
       // User changes to cost data invalidate the old calculation result,
       // so hide/clear the old result, but preserve actualPrice/minimumPrice.
       const clearOldQuote = () => clearCalculationResult(false);
@@ -2440,7 +2453,7 @@ window.onload = () => {
     }
   };
 
-  // V8.1: only one background cloud sync per page load.
+  // V8.2: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
