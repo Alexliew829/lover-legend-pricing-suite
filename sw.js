@@ -1,9 +1,9 @@
-const CACHE = "lover-legend-pricing-v8.2-product-info-two-lines";
+const CACHE = "lover-legend-pricing-v8.3-prefix-product-search";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=8.2-product-info-two-lines",
+  "./cost-calculator/index.html?v=8.3-prefix-product-search",
   "./bonsai-price-calculator/index.html?v=3.6"
 ];
 

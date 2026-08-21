@@ -1,0 +1,16 @@
+V8.3 audit passed.
+
+Search behavior:
+- product code query uses exact OR startsWith(query)
+- BX5 can match BX580
+- BX58 can match BX580
+- BX580 can match BX580
+- BX58 does not match BX1680
+- Chinese keyword matching unchanged
+
+Version:
+- visible V8.3
+- VERSION V8.3
+- manifest V8.3
+- iframe query v=8.3-prefix-product-search
+- service worker query/cache V8.3

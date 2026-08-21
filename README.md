@@ -1,13 +1,15 @@
-# Lover Legend Pricing Suite V8.2
+# Lover Legend Pricing Suite V8.3
 
-## V8.2 Stable First Calculation
+## V8.3 Product Code Prefix Search
 
-正确行为：
-- 从进口系统选择产品 → 按「计算」→ 结果保持显示，不会被后台同步清掉。
-- 用户手动修改花盆、苔藓、本地运费、汇率、内地杂费、海外运费 → 旧计算结果清空。
-- 再按「计算」→ 按新数据重新显示结果。
-- 修改成本数据时保留 minimumPrice / 实际售价。
-- 后台 minimumPrice 同步只更新实际售价，不再调用 clearCalculationResult()。
-- 保留 Direct Local Sync、minimumPrice 单向映射、iframe 稳定高度和其他计算逻辑。
+- 修正 V8.2 产品编号必须输入完整编号才会显示的问题。
+- 现在支持即时前缀搜索：
+  - `BX5` → 显示所有以 BX5 开头的型号
+  - `BX58` → 可以找到 BX580
+  - `BX580` → 精确找到 BX580
+- 大小写不敏感：`bx58` 与 `BX58` 相同。
+- 不会因为输入 `BX58` 而误配 `BX1680`，因为采用型号前缀匹配，不是任意包含匹配。
+- 中文产品名称和原有中文关键词搜索逻辑保持不变。
+- minimumPrice、Direct Local Sync、成本/汇率/运费/利润计算等现有逻辑全部保持不变。
 - Apps Script / Google Sheet 不需要修改。
-- 版本保持 V8.2，但 iframe / Service Worker cache token 已重新更新，确保 GitHub Pages 取得本次修正版。
+- 页面、VERSION、manifest、iframe cache、Service Worker cache 全部更新为 V8.3。

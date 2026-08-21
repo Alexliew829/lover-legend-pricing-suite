@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V8.2",
+  "name": "Lover Legend Pricing Suite V8.3",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V8.2 stable first calculation: background import sync no longer clears results"
+  "description": "V8.3 restores instant prefix product-code search such as BX5 / BX58 / BX580"
 }

@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.2-product-info-two-lines"
+          src="cost-calculator/index.html?v=8.3-prefix-product-search"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -567,7 +567,7 @@
 
         prepareFrame(frame);
 
-        // V8.2 Stable Frame Resize:
+        // V8.3 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -866,7 +866,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.2-product-info-two-lines", { updateViaCache: "none" })
+          .register("sw.js?v=8.3-prefix-product-search", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
