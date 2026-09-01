@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.3-prefix-product-search"
+          src="cost-calculator/index.html?v=8.4-scroll-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -567,7 +567,7 @@
 
         prepareFrame(frame);
 
-        // V8.3 Stable Frame Resize:
+        // V8.4 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -762,7 +762,6 @@
 
     function showPullIndicator(distance) {
       if (!pullRefreshIndicator) return;
-
       pullRefreshIndicator.classList.add("show");
       pullRefreshIndicator.textContent =
         distance >= pullThreshold ? "松开刷新" : "↓ 下拉刷新";
@@ -788,38 +787,37 @@
       window.location.replace(url.toString());
     }
 
-    function handlePullStart(event) {
-      if (!isMobileDevice || pullRefreshing || window.scrollY > 0) return;
-      if (!event.touches || event.touches.length !== 1) return;
+    function beginPullTracking(event) {
+      if (!isMobileDevice || pullRefreshing || window.scrollY > 0) return false;
+      if (!event.touches || event.touches.length !== 1) return false;
 
       pullStartY = event.touches[0].clientY;
       pullDistance = 0;
       pullTracking = true;
+      return true;
     }
 
-    function handlePullMove(event) {
-      if (!pullTracking || !event.touches || event.touches.length !== 1) return;
+    function updatePullTracking(event) {
+      if (!pullTracking || !event.touches || event.touches.length !== 1) return false;
 
       const currentY = event.touches[0].clientY;
       pullDistance = Math.max(0, currentY - pullStartY);
 
-      if (pullDistance <= 0) {
+      if (pullDistance <= 0 || window.scrollY > 0) {
         hidePullIndicator();
-        return;
+        return false;
       }
 
       showPullIndicator(pullDistance);
-
-      // 到达页面顶部后向下拉时，阻止 iOS 自己的橡皮筋滚动。
-      if (event.cancelable) {
-        event.preventDefault();
-      }
+      return true;
     }
 
-    function handlePullEnd() {
+    function endPullTracking() {
       if (!pullTracking) return;
 
-      const shouldRefresh = pullDistance >= pullThreshold;
+      const shouldRefresh =
+        window.scrollY <= 0 && pullDistance >= pullThreshold;
+
       pullTracking = false;
       pullDistance = 0;
 
@@ -830,29 +828,149 @@
       }
     }
 
-    function attachPullToRefresh(targetDocument) {
-      if (!isMobileDevice || !targetDocument) return;
-      if (targetDocument.__pricingSuitePullRefreshAttached) return;
-
-      targetDocument.__pricingSuitePullRefreshAttached = true;
-      targetDocument.addEventListener("touchstart", handlePullStart, { passive: true });
-      targetDocument.addEventListener("touchmove", handlePullMove, { passive: false });
-      targetDocument.addEventListener("touchend", handlePullEnd, { passive: true });
-      targetDocument.addEventListener("touchcancel", handlePullEnd, { passive: true });
+    // V8.4: parent page keeps normal browser scrolling.
+    // Pull-to-refresh only intercepts a downward pull at the very top.
+    function handleParentTouchStart(event) {
+      beginPullTracking(event);
     }
 
-    attachPullToRefresh(document);
+    function handleParentTouchMove(event) {
+      if (!pullTracking) return;
+      if (!updatePullTracking(event)) return;
 
-    document.querySelectorAll("iframe").forEach(frame => {
-      frame.addEventListener("load", () => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    }
+
+    function handleParentTouchEnd() {
+      endPullTracking();
+    }
+
+    function isScrollableFrameTarget(target, fingerDeltaY) {
+      let node = target && target.nodeType === 1 ? target : target?.parentElement;
+
+      while (node && node !== node.ownerDocument?.body) {
         try {
-          const doc = frame.contentDocument || frame.contentWindow.document;
-          attachPullToRefresh(doc);
-        } catch (error) {
-          // 同源页面正常情况下可以绑定；失败时不影响计算器。
-        }
+          const style = node.ownerDocument.defaultView.getComputedStyle(node);
+          const canOverflow =
+            /(auto|scroll)/.test(style.overflowY) &&
+            node.scrollHeight > node.clientHeight + 2;
+
+          if (canOverflow) {
+            if (fingerDeltaY > 0 && node.scrollTop > 0) return true;
+            if (
+              fingerDeltaY < 0 &&
+              node.scrollTop + node.clientHeight < node.scrollHeight - 2
+            ) {
+              return true;
+            }
+          }
+        } catch (error) {}
+
+        node = node.parentElement;
+      }
+
+      return false;
+    }
+
+    function attachFrameScrollBridge(frame) {
+      if (!isMobileDevice || !frame) return;
+
+      try {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc || doc.__pricingSuiteScrollBridgeAttached) return;
+
+        doc.__pricingSuiteScrollBridgeAttached = true;
+
+        let startY = 0;
+        let lastY = 0;
+        let active = false;
+
+        doc.addEventListener("touchstart", event => {
+          if (pullRefreshing || !event.touches || event.touches.length !== 1) {
+            active = false;
+            return;
+          }
+
+          startY = event.touches[0].clientY;
+          lastY = startY;
+          active = true;
+
+          if (window.scrollY <= 0) {
+            pullStartY = startY;
+            pullDistance = 0;
+            pullTracking = true;
+          } else {
+            pullTracking = false;
+            pullDistance = 0;
+          }
+        }, { passive: true });
+
+        doc.addEventListener("touchmove", event => {
+          if (!active || !event.touches || event.touches.length !== 1) return;
+
+          const currentY = event.touches[0].clientY;
+          const deltaY = currentY - lastY;
+          const totalDeltaY = currentY - startY;
+          lastY = currentY;
+
+          if (window.scrollY <= 0 && totalDeltaY > 0) {
+            pullTracking = true;
+            pullDistance = totalDeltaY;
+            showPullIndicator(pullDistance);
+
+            if (event.cancelable) {
+              event.preventDefault();
+            }
+            return;
+          }
+
+          pullTracking = false;
+          pullDistance = 0;
+          hidePullIndicator();
+
+          if (isScrollableFrameTarget(event.target, deltaY)) {
+            return;
+          }
+
+          // Auto-fitted iframes do not scroll themselves. Forward the
+          // vertical swipe to the parent so the whole suite moves both ways.
+          if (Math.abs(deltaY) > 0.5) {
+            if (event.cancelable) {
+              event.preventDefault();
+            }
+            window.scrollBy(0, -deltaY);
+          }
+        }, { passive: false });
+
+        const finishGesture = () => {
+          if (!active) return;
+          active = false;
+          endPullTracking();
+        };
+
+        doc.addEventListener("touchend", finishGesture, { passive: true });
+        doc.addEventListener("touchcancel", finishGesture, { passive: true });
+      } catch (error) {
+        // Same-origin frames normally work; failure must not break calculators.
+      }
+    }
+
+    if (isMobileDevice) {
+      document.addEventListener("touchstart", handleParentTouchStart, { passive: true });
+      document.addEventListener("touchmove", handleParentTouchMove, { passive: false });
+      document.addEventListener("touchend", handleParentTouchEnd, { passive: true });
+      document.addEventListener("touchcancel", handleParentTouchEnd, { passive: true });
+
+      document.querySelectorAll("iframe").forEach(frame => {
+        frame.addEventListener("load", () => {
+          attachFrameScrollBridge(frame);
+        });
+
+        attachFrameScrollBridge(frame);
       });
-    });
+    }
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
@@ -866,7 +984,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.3-prefix-product-search", { updateViaCache: "none" })
+          .register("sw.js?v=8.4-scroll-pull-refresh", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
