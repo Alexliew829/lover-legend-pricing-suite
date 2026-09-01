@@ -1,8 +1,0 @@
-V8.1 final audit passed.
-- manual cost inputs -> clearCalculationResult(false)
-- background minimumPrice refresh -> does NOT call clearCalculationResult
-- first calculated result survives async import refresh
-- actualPrice/minimumPrice preserved when manual cost fields change
-- no Import System write-back
-- VERSION V8.1
-- iframe/SW cache token: 8.1-stable-first-calculation
