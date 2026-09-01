@@ -1,9 +1,0 @@
-Lover Legend Pricing Suite V8.5
-
-1. Base: original user V8.3 suite.
-2. Replaced bonsai-price-calculator with user-uploaded Kalkulator Harga Bonsai V3.3.
-3. V3.3 calculation formulas/layout preserved; only embedded-mode guards added so it does not unregister the suite Service Worker or run its own pull-to-refresh inside the iframe. Standalone V3.3 behavior remains unchanged.
-4. Reworked mobile iframe scroll bridge using requestAnimationFrame to make up/down scrolling smoother.
-5. Pull-down refresh remains available only when the overall suite is at the top.
-6. Cost-calculator formulas/search/import logic unchanged; visible version updated to V8.5.
-7. Apps Script / Code.gs: no update required.
