@@ -1,0 +1,10 @@
+Lover Legend Pricing Suite V8.6
+
+1. Cost & Selling Price Calculator visible version updated to V8.6.
+2. Bonsai Price Calculator remains the user-provided V3.3; formulas, layout, FX logic and version are unchanged.
+3. Mobile iframe scrolling bridge rewritten for lower latency: immediate parent scrolling plus short momentum after release.
+4. Normal up/down scrolling remains available throughout the page.
+5. Pull-to-refresh is only intercepted when the whole suite is already at the top and the user pulls downward.
+6. Cost-calculator formulas, product search, Import mapping/data logic and layout are unchanged.
+7. Service Worker/cache references bumped to V8.6 to prevent stale V8.5 assets.
+8. Apps Script / Code.gs: no update required.

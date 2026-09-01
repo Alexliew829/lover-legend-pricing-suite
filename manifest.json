@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V8.5",
+  "name": "Lover Legend Pricing Suite V8.6",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V8.5 restores instant prefix product-code search such as BX5 / BX58 / BX580"
+  "description": "V8.6 restores instant prefix product-code search such as BX5 / BX58 / BX580"
 }
