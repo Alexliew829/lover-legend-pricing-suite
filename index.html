@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.6-smooth-scroll-v33"
+          src="cost-calculator/index.html?v=8.8-native-scroll-v33"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.3-v8.7"
+          src="bonsai-price-calculator/index.html?v=3.3-v8.8"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -536,7 +536,12 @@
           const style = doc.createElement("style");
           style.id = "pricing-suite-layout-fix";
           style.textContent = `
-            html, body { min-height: 0 !important; }
+            html, body {
+              min-height: 0 !important;
+              overflow: hidden !important;
+              overscroll-behavior: auto !important;
+              touch-action: pan-y !important;
+            }
             .app { min-height: 0 !important; }
           `;
           doc.head.appendChild(style);
@@ -567,7 +572,7 @@
 
         prepareFrame(frame);
 
-        // V8.7 Stable Frame Resize:
+        // V8.8 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -794,95 +799,61 @@
       else hidePullIndicator();
     }
 
-    // V8.7: low-latency iframe scroll bridge for iPhone.
-    // The two calculators remain separate iframes, but scrolling is mapped to
-    // the outer page from the gesture start position instead of accumulating
-    // per-touch deltas or running artificial momentum. This removes the queued
-    // / rubber-band feeling from V8.7 while keeping all calculator controls live.
-    let scrollFrame = 0;
-    let pendingScrollY = null;
-
-    function scheduleOuterScroll(y) {
-      pendingScrollY = Math.max(0, y);
-      if (scrollFrame) return;
-      scrollFrame = requestAnimationFrame(() => {
-        scrollFrame = 0;
-        if (pendingScrollY === null) return;
-        window.scrollTo(0, pendingScrollY);
-        pendingScrollY = null;
-      });
-    }
-
-    function isScrollableControl(target, fingerDeltaY) {
-      let node = target && target.nodeType === 1 ? target : null;
-      for (let depth = 0; node && depth < 5; depth += 1, node = node.parentElement) {
-        if (node.tagName === "TEXTAREA" || node.tagName === "SELECT") return true;
-        if (node.scrollHeight > node.clientHeight + 3) {
-          const style = node.ownerDocument.defaultView.getComputedStyle(node);
-          if (/(auto|scroll)/.test(style.overflowY)) {
-            if (fingerDeltaY > 0 && node.scrollTop > 0) return true;
-            if (fingerDeltaY < 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 2) return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    function attachV87FrameBridge(frame) {
+    // V8.8 Native Scroll:
+    // No more scrollBy / scrollTo bridge and no artificial momentum.
+    // Both iframe documents are made non-scrollable containers, so normal
+    // vertical gestures are left to iPhone/Safari's native parent-page scroll.
+    // We intercept ONLY a downward pull while the whole suite is already at
+    // scrollY=0, solely to keep Home Screen pull-to-refresh available.
+    function attachRefreshOnlyGesture(frame) {
       if (!isMobileDevice || !frame) return;
       try {
         const doc = frame.contentDocument || frame.contentWindow.document;
-        if (!doc || doc.__pricingSuiteV87Bridge) return;
-        doc.__pricingSuiteV87Bridge = true;
+        if (!doc || doc.__pricingSuiteV88RefreshOnly) return;
+        doc.__pricingSuiteV88RefreshOnly = true;
 
-        let active = false;
+        let tracking = false;
         let startY = 0;
-        let lastY = 0;
-        let startScrollY = 0;
 
         doc.addEventListener("touchstart", event => {
-          if (pullRefreshing || !event.touches || event.touches.length !== 1) {
-            active = false;
+          if (
+            pullRefreshing ||
+            window.scrollY > 0 ||
+            !event.touches ||
+            event.touches.length !== 1
+          ) {
+            tracking = false;
             return;
           }
-          active = true;
-          startY = lastY = event.touches[0].clientY;
-          startScrollY = window.scrollY;
+          tracking = true;
+          startY = event.touches[0].clientY;
           pullTracking = false;
           pullDistance = 0;
           hidePullIndicator();
         }, { passive: true });
 
         doc.addEventListener("touchmove", event => {
-          if (!active || !event.touches || event.touches.length !== 1) return;
-          const y = event.touches[0].clientY;
-          const fingerDelta = y - lastY;
-          const totalDelta = y - startY;
-          lastY = y;
+          if (!tracking || !event.touches || event.touches.length !== 1) return;
+          const delta = event.touches[0].clientY - startY;
 
-          // At the very top, a downward pull is reserved only for Refresh.
-          if (startScrollY <= 0 && window.scrollY <= 0 && totalDelta > 0) {
-            pullTracking = true;
-            pullDistance = totalDelta;
-            showPullIndicator(pullDistance);
-            if (event.cancelable) event.preventDefault();
+          // Upward/normal vertical movement is never cancelled: Safari handles it.
+          if (delta <= 0 || window.scrollY > 0) {
+            pullTracking = false;
+            pullDistance = 0;
+            hidePullIndicator();
+            tracking = false;
             return;
           }
 
-          pullTracking = false;
-          pullDistance = 0;
-          hidePullIndicator();
-
-          // Preserve native interaction for genuine scrollable form controls.
-          if (isScrollableControl(event.target, fingerDelta)) return;
-
+          pullTracking = true;
+          pullDistance = delta;
+          showPullIndicator(pullDistance);
           if (event.cancelable) event.preventDefault();
-          scheduleOuterScroll(startScrollY - totalDelta);
         }, { passive: false });
 
         const endGesture = () => {
-          if (!active) return;
-          active = false;
+          if (!tracking && !pullTracking) return;
+          tracking = false;
           finishPullRefreshGesture();
         };
         doc.addEventListener("touchend", endGesture, { passive: true });
@@ -891,27 +862,32 @@
     }
 
     if (isMobileDevice) {
-      // Outside the calculator iframes Safari uses its own native scrolling.
-      // Only when the whole suite is already at scrollY=0 do we intercept a
-      // downward pull to perform Refresh.
-      let parentStartY = 0;
+      // Native outer-page pull-to-refresh area (outside the iframes).
       document.addEventListener("touchstart", event => {
-        if (pullRefreshing || window.scrollY > 0 || !event.touches || event.touches.length !== 1) {
+        if (
+          pullRefreshing ||
+          window.scrollY > 0 ||
+          !event.touches ||
+          event.touches.length !== 1
+        ) {
           pullTracking = false;
           return;
         }
-        parentStartY = event.touches[0].clientY;
+        pullStartY = event.touches[0].clientY;
         pullTracking = true;
         pullDistance = 0;
       }, { passive: true });
 
       document.addEventListener("touchmove", event => {
         if (!pullTracking || !event.touches || event.touches.length !== 1) return;
-        pullDistance = Math.max(0, event.touches[0].clientY - parentStartY);
-        if (pullDistance <= 0 || window.scrollY > 0) {
+        const delta = event.touches[0].clientY - pullStartY;
+        if (delta <= 0 || window.scrollY > 0) {
+          pullTracking = false;
+          pullDistance = 0;
           hidePullIndicator();
           return;
         }
+        pullDistance = delta;
         showPullIndicator(pullDistance);
         if (event.cancelable) event.preventDefault();
       }, { passive: false });
@@ -920,8 +896,8 @@
       document.addEventListener("touchcancel", finishPullRefreshGesture, { passive: true });
 
       document.querySelectorAll("iframe").forEach(frame => {
-        frame.addEventListener("load", () => attachV87FrameBridge(frame));
-        attachV87FrameBridge(frame);
+        frame.addEventListener("load", () => attachRefreshOnlyGesture(frame));
+        attachRefreshOnlyGesture(frame);
       });
     }
 
@@ -937,7 +913,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.6-smooth-scroll-v33", { updateViaCache: "none" })
+          .register("sw.js?v=8.8-native-scroll-v33", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
