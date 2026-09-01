@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.4-scroll-pull-refresh"
+          src="cost-calculator/index.html?v=8.5-smooth-scroll-v33"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.6"
+          src="bonsai-price-calculator/index.html?v=3.3-v8.5"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -567,7 +567,7 @@
 
         prepareFrame(frame);
 
-        // V8.4 Stable Frame Resize:
+        // V8.5 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -776,153 +776,94 @@
     function runPullRefresh() {
       if (pullRefreshing) return;
       pullRefreshing = true;
-
       if (pullRefreshIndicator) {
         pullRefreshIndicator.classList.add("show");
         pullRefreshIndicator.textContent = "正在刷新…";
       }
-
       const url = new URL(window.location.href);
       url.searchParams.set("_refresh", Date.now().toString());
       window.location.replace(url.toString());
     }
 
-    function beginPullTracking(event) {
-      if (!isMobileDevice || pullRefreshing || window.scrollY > 0) return false;
-      if (!event.touches || event.touches.length !== 1) return false;
-
-      pullStartY = event.touches[0].clientY;
-      pullDistance = 0;
-      pullTracking = true;
-      return true;
-    }
-
-    function updatePullTracking(event) {
-      if (!pullTracking || !event.touches || event.touches.length !== 1) return false;
-
-      const currentY = event.touches[0].clientY;
-      pullDistance = Math.max(0, currentY - pullStartY);
-
-      if (pullDistance <= 0 || window.scrollY > 0) {
-        hidePullIndicator();
-        return false;
-      }
-
-      showPullIndicator(pullDistance);
-      return true;
-    }
-
-    function endPullTracking() {
+    function finishPullRefreshGesture() {
       if (!pullTracking) return;
-
-      const shouldRefresh =
-        window.scrollY <= 0 && pullDistance >= pullThreshold;
-
+      const shouldRefresh = window.scrollY <= 0 && pullDistance >= pullThreshold;
       pullTracking = false;
       pullDistance = 0;
-
-      if (shouldRefresh) {
-        runPullRefresh();
-      } else {
-        hidePullIndicator();
-      }
+      if (shouldRefresh) runPullRefresh();
+      else hidePullIndicator();
     }
 
-    // V8.4: parent page keeps normal browser scrolling.
-    // Pull-to-refresh only intercepts a downward pull at the very top.
-    function handleParentTouchStart(event) {
-      beginPullTracking(event);
+    // V8.5: use one animation-frame scroll update per screen refresh.
+    // This avoids the stutter caused by calling window.scrollBy on every touchmove.
+    let queuedScrollY = 0;
+    let scrollFramePending = false;
+
+    function queueParentScroll(deltaY) {
+      queuedScrollY += deltaY;
+      if (scrollFramePending) return;
+      scrollFramePending = true;
+      requestAnimationFrame(() => {
+        const amount = queuedScrollY;
+        queuedScrollY = 0;
+        scrollFramePending = false;
+        if (Math.abs(amount) > 0.1) window.scrollBy(0, amount);
+      });
     }
 
-    function handleParentTouchMove(event) {
-      if (!pullTracking) return;
-      if (!updatePullTracking(event)) return;
-
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-    }
-
-    function handleParentTouchEnd() {
-      endPullTracking();
-    }
-
-    function isScrollableFrameTarget(target, fingerDeltaY) {
+    function targetCanScroll(target, fingerDeltaY) {
       let node = target && target.nodeType === 1 ? target : target?.parentElement;
-
       while (node && node !== node.ownerDocument?.body) {
         try {
           const style = node.ownerDocument.defaultView.getComputedStyle(node);
-          const canOverflow =
-            /(auto|scroll)/.test(style.overflowY) &&
+          const canOverflow = /(auto|scroll)/.test(style.overflowY) &&
             node.scrollHeight > node.clientHeight + 2;
-
           if (canOverflow) {
             if (fingerDeltaY > 0 && node.scrollTop > 0) return true;
-            if (
-              fingerDeltaY < 0 &&
-              node.scrollTop + node.clientHeight < node.scrollHeight - 2
-            ) {
-              return true;
-            }
+            if (fingerDeltaY < 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 2) return true;
           }
         } catch (error) {}
-
         node = node.parentElement;
       }
-
       return false;
     }
 
-    function attachFrameScrollBridge(frame) {
+    function attachSmoothFrameBridge(frame) {
       if (!isMobileDevice || !frame) return;
-
       try {
         const doc = frame.contentDocument || frame.contentWindow.document;
-        if (!doc || doc.__pricingSuiteScrollBridgeAttached) return;
+        if (!doc || doc.__pricingSuiteV85Bridge) return;
+        doc.__pricingSuiteV85Bridge = true;
 
-        doc.__pricingSuiteScrollBridgeAttached = true;
-
+        let active = false;
         let startY = 0;
         let lastY = 0;
-        let active = false;
 
         doc.addEventListener("touchstart", event => {
           if (pullRefreshing || !event.touches || event.touches.length !== 1) {
             active = false;
             return;
           }
-
-          startY = event.touches[0].clientY;
-          lastY = startY;
           active = true;
-
-          if (window.scrollY <= 0) {
-            pullStartY = startY;
-            pullDistance = 0;
-            pullTracking = true;
-          } else {
-            pullTracking = false;
-            pullDistance = 0;
-          }
+          startY = lastY = event.touches[0].clientY;
+          pullTracking = false;
+          pullDistance = 0;
         }, { passive: true });
 
         doc.addEventListener("touchmove", event => {
           if (!active || !event.touches || event.touches.length !== 1) return;
+          const y = event.touches[0].clientY;
+          const fingerDelta = y - lastY;
+          const totalDelta = y - startY;
+          lastY = y;
 
-          const currentY = event.touches[0].clientY;
-          const deltaY = currentY - lastY;
-          const totalDeltaY = currentY - startY;
-          lastY = currentY;
-
-          if (window.scrollY <= 0 && totalDeltaY > 0) {
+          // Only a downward pull while the whole suite is already at the top is refresh.
+          if (window.scrollY <= 0 && totalDelta > 0) {
             pullTracking = true;
-            pullDistance = totalDeltaY;
+            pullStartY = startY;
+            pullDistance = totalDelta;
             showPullIndicator(pullDistance);
-
-            if (event.cancelable) {
-              event.preventDefault();
-            }
+            if (event.cancelable) event.preventDefault();
             return;
           }
 
@@ -930,45 +871,54 @@
           pullDistance = 0;
           hidePullIndicator();
 
-          if (isScrollableFrameTarget(event.target, deltaY)) {
-            return;
-          }
-
-          // Auto-fitted iframes do not scroll themselves. Forward the
-          // vertical swipe to the parent so the whole suite moves both ways.
-          if (Math.abs(deltaY) > 0.5) {
-            if (event.cancelable) {
-              event.preventDefault();
-            }
-            window.scrollBy(0, -deltaY);
+          // Leave genuinely scrollable controls alone; otherwise move the parent page.
+          if (targetCanScroll(event.target, fingerDelta)) return;
+          if (Math.abs(fingerDelta) > 0.25) {
+            if (event.cancelable) event.preventDefault();
+            queueParentScroll(-fingerDelta);
           }
         }, { passive: false });
 
-        const finishGesture = () => {
+        const end = () => {
           if (!active) return;
           active = false;
-          endPullTracking();
+          finishPullRefreshGesture();
         };
-
-        doc.addEventListener("touchend", finishGesture, { passive: true });
-        doc.addEventListener("touchcancel", finishGesture, { passive: true });
-      } catch (error) {
-        // Same-origin frames normally work; failure must not break calculators.
-      }
+        doc.addEventListener("touchend", end, { passive: true });
+        doc.addEventListener("touchcancel", end, { passive: true });
+      } catch (error) {}
     }
 
     if (isMobileDevice) {
-      document.addEventListener("touchstart", handleParentTouchStart, { passive: true });
-      document.addEventListener("touchmove", handleParentTouchMove, { passive: false });
-      document.addEventListener("touchend", handleParentTouchEnd, { passive: true });
-      document.addEventListener("touchcancel", handleParentTouchEnd, { passive: true });
+      // Native parent-page scrolling stays untouched outside the iframes.
+      let parentStartY = 0;
+      document.addEventListener("touchstart", event => {
+        if (pullRefreshing || window.scrollY > 0 || !event.touches || event.touches.length !== 1) {
+          pullTracking = false;
+          return;
+        }
+        parentStartY = event.touches[0].clientY;
+        pullTracking = true;
+        pullDistance = 0;
+      }, { passive: true });
+
+      document.addEventListener("touchmove", event => {
+        if (!pullTracking || !event.touches || event.touches.length !== 1) return;
+        pullDistance = Math.max(0, event.touches[0].clientY - parentStartY);
+        if (pullDistance <= 0 || window.scrollY > 0) {
+          hidePullIndicator();
+          return;
+        }
+        showPullIndicator(pullDistance);
+        if (event.cancelable) event.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener("touchend", finishPullRefreshGesture, { passive: true });
+      document.addEventListener("touchcancel", finishPullRefreshGesture, { passive: true });
 
       document.querySelectorAll("iframe").forEach(frame => {
-        frame.addEventListener("load", () => {
-          attachFrameScrollBridge(frame);
-        });
-
-        attachFrameScrollBridge(frame);
+        frame.addEventListener("load", () => attachSmoothFrameBridge(frame));
+        attachSmoothFrameBridge(frame);
       });
     }
 
@@ -984,7 +934,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.4-scroll-pull-refresh", { updateViaCache: "none" })
+          .register("sw.js?v=8.5-smooth-scroll-v33", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });

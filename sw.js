@@ -1,10 +1,10 @@
-const CACHE = "lover-legend-pricing-v8.4-scroll-pull-refresh";
+const CACHE = "lover-legend-pricing-v8.5-smooth-v33";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=8.4-scroll-pull-refresh",
-  "./bonsai-price-calculator/index.html?v=3.6"
+  "./cost-calculator/index.html?v=8.5-smooth-scroll-v33",
+  "./bonsai-price-calculator/index.html?v=3.3-v8.5"
 ];
 
 self.addEventListener("install", event => {
@@ -13,21 +13,17 @@ self.addEventListener("install", event => {
 });
 
 self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(key => key !== CACHE).map(key => caches.delete(key))
+  )));
   self.clients.claim();
 });
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE).then(cache => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  event.respondWith(fetch(event.request).then(response => {
+    const copy = response.clone();
+    caches.open(CACHE).then(cache => cache.put(event.request, copy));
+    return response;
+  }).catch(() => caches.match(event.request)));
 });

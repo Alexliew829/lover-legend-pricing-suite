@@ -1,6 +1,6 @@
-# Lover Legend Pricing Suite V8.4
+# Lover Legend Pricing Suite V8.5
 
-## V8.4 Mobile Scroll + Pull Refresh
+## V8.5 Product Code Prefix Search
 
 - 修正 V8.2 产品编号必须输入完整编号才会显示的问题。
 - 现在支持即时前缀搜索：
@@ -12,4 +12,4 @@
 - 中文产品名称和原有中文关键词搜索逻辑保持不变。
 - minimumPrice、Direct Local Sync、成本/汇率/运费/利润计算等现有逻辑全部保持不变。
 - Apps Script / Google Sheet 不需要修改。
-- 页面、VERSION、manifest、iframe cache、Service Worker cache 全部更新为 V8.4。
+- 页面、VERSION、manifest、iframe cache、Service Worker cache 全部更新为 V8.5。
