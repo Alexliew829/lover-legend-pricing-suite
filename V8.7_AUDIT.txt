@@ -1,0 +1,11 @@
+Lover Legend Pricing Suite V8.7
+
+Scope locked:
+- Cost & Selling Price Calculator version updated to V8.7.
+- Bonsai Price Calculator remains the supplied V3.3 unchanged.
+- No calculation formula, pricing rule, Import lookup, or layout logic changed.
+- Replaced V8.6 iframe momentum/incremental scroll bridge with a low-latency gesture-start scroll mapping.
+- Removed artificial momentum that caused dragging / lag on iPhone.
+- Normal up/down scrolling remains available.
+- Pull-down Refresh is intercepted only when the whole suite is already at the top.
+- Apps Script / Code.gs: no update required.

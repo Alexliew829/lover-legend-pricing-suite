@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.3-v8.6"
+          src="bonsai-price-calculator/index.html?v=3.3-v8.7"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -567,7 +567,7 @@
 
         prepareFrame(frame);
 
-        // V8.6 Stable Frame Resize:
+        // V8.7 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -794,92 +794,77 @@
       else hidePullIndicator();
     }
 
-    // V8.6: smoother iframe-to-parent scrolling.
-    // Keep the calculator iframes interactive, but avoid queued RAF lag.
-    // During a normal swipe we move the parent page immediately; on release,
-    // a short momentum animation preserves the native iPhone feel.
-    let momentumFrame = 0;
+    // V8.7: low-latency iframe scroll bridge for iPhone.
+    // The two calculators remain separate iframes, but scrolling is mapped to
+    // the outer page from the gesture start position instead of accumulating
+    // per-touch deltas or running artificial momentum. This removes the queued
+    // / rubber-band feeling from V8.7 while keeping all calculator controls live.
+    let scrollFrame = 0;
+    let pendingScrollY = null;
 
-    function stopMomentum() {
-      if (momentumFrame) cancelAnimationFrame(momentumFrame);
-      momentumFrame = 0;
+    function scheduleOuterScroll(y) {
+      pendingScrollY = Math.max(0, y);
+      if (scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (pendingScrollY === null) return;
+        window.scrollTo(0, pendingScrollY);
+        pendingScrollY = null;
+      });
     }
 
-    function runMomentum(initialVelocity) {
-      stopMomentum();
-      let velocity = initialVelocity;
-      const step = () => {
-        velocity *= 0.92;
-        if (Math.abs(velocity) < 0.35) {
-          momentumFrame = 0;
-          return;
-        }
-        window.scrollBy(0, velocity);
-        momentumFrame = requestAnimationFrame(step);
-      };
-      momentumFrame = requestAnimationFrame(step);
-    }
-
-    function targetCanScroll(target, fingerDeltaY) {
-      let node = target && target.nodeType === 1 ? target : target?.parentElement;
-      while (node && node !== node.ownerDocument?.body) {
-        try {
+    function isScrollableControl(target, fingerDeltaY) {
+      let node = target && target.nodeType === 1 ? target : null;
+      for (let depth = 0; node && depth < 5; depth += 1, node = node.parentElement) {
+        if (node.tagName === "TEXTAREA" || node.tagName === "SELECT") return true;
+        if (node.scrollHeight > node.clientHeight + 3) {
           const style = node.ownerDocument.defaultView.getComputedStyle(node);
-          const canOverflow = /(auto|scroll)/.test(style.overflowY) &&
-            node.scrollHeight > node.clientHeight + 2;
-          if (canOverflow) {
+          if (/(auto|scroll)/.test(style.overflowY)) {
             if (fingerDeltaY > 0 && node.scrollTop > 0) return true;
             if (fingerDeltaY < 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 2) return true;
           }
-        } catch (error) {}
-        node = node.parentElement;
+        }
       }
       return false;
     }
 
-    function attachSmoothFrameBridge(frame) {
+    function attachV87FrameBridge(frame) {
       if (!isMobileDevice || !frame) return;
       try {
         const doc = frame.contentDocument || frame.contentWindow.document;
-        if (!doc || doc.__pricingSuiteV86Bridge) return;
-        doc.__pricingSuiteV86Bridge = true;
+        if (!doc || doc.__pricingSuiteV87Bridge) return;
+        doc.__pricingSuiteV87Bridge = true;
 
         let active = false;
         let startY = 0;
         let lastY = 0;
-        let lastTime = 0;
-        let velocity = 0;
+        let startScrollY = 0;
 
         doc.addEventListener("touchstart", event => {
-          stopMomentum();
           if (pullRefreshing || !event.touches || event.touches.length !== 1) {
             active = false;
             return;
           }
           active = true;
           startY = lastY = event.touches[0].clientY;
-          lastTime = performance.now();
-          velocity = 0;
+          startScrollY = window.scrollY;
           pullTracking = false;
           pullDistance = 0;
+          hidePullIndicator();
         }, { passive: true });
 
         doc.addEventListener("touchmove", event => {
           if (!active || !event.touches || event.touches.length !== 1) return;
-          const now = performance.now();
           const y = event.touches[0].clientY;
           const fingerDelta = y - lastY;
           const totalDelta = y - startY;
-          const dt = Math.max(8, now - lastTime);
           lastY = y;
-          lastTime = now;
 
-          // Refresh is only possible while the whole suite is already at the very top.
-          if (window.scrollY <= 0 && totalDelta > 0) {
+          // At the very top, a downward pull is reserved only for Refresh.
+          if (startScrollY <= 0 && window.scrollY <= 0 && totalDelta > 0) {
             pullTracking = true;
             pullDistance = totalDelta;
             showPullIndicator(pullDistance);
-            velocity = 0;
             if (event.cancelable) event.preventDefault();
             return;
           }
@@ -888,35 +873,29 @@
           pullDistance = 0;
           hidePullIndicator();
 
-          // Leave real scrollable controls alone. Otherwise scroll the outer page immediately.
-          if (targetCanScroll(event.target, fingerDelta)) return;
-          if (Math.abs(fingerDelta) > 0.15) {
-            if (event.cancelable) event.preventDefault();
-            const scrollDelta = -fingerDelta;
-            window.scrollBy(0, scrollDelta);
-            const instantVelocity = scrollDelta * (16.67 / dt);
-            velocity = velocity * 0.65 + instantVelocity * 0.35;
-          }
+          // Preserve native interaction for genuine scrollable form controls.
+          if (isScrollableControl(event.target, fingerDelta)) return;
+
+          if (event.cancelable) event.preventDefault();
+          scheduleOuterScroll(startScrollY - totalDelta);
         }, { passive: false });
 
-        const end = () => {
+        const endGesture = () => {
           if (!active) return;
           active = false;
-          const wasPull = pullTracking;
           finishPullRefreshGesture();
-          if (!wasPull && Math.abs(velocity) > 0.8) runMomentum(velocity);
         };
-        doc.addEventListener("touchend", end, { passive: true });
-        doc.addEventListener("touchcancel", end, { passive: true });
+        doc.addEventListener("touchend", endGesture, { passive: true });
+        doc.addEventListener("touchcancel", endGesture, { passive: true });
       } catch (error) {}
     }
 
     if (isMobileDevice) {
-      // Outside the iframes, Safari keeps its normal native scrolling.
-      // Only a downward pull at scrollY=0 is intercepted for refresh.
+      // Outside the calculator iframes Safari uses its own native scrolling.
+      // Only when the whole suite is already at scrollY=0 do we intercept a
+      // downward pull to perform Refresh.
       let parentStartY = 0;
       document.addEventListener("touchstart", event => {
-        stopMomentum();
         if (pullRefreshing || window.scrollY > 0 || !event.touches || event.touches.length !== 1) {
           pullTracking = false;
           return;
@@ -941,8 +920,8 @@
       document.addEventListener("touchcancel", finishPullRefreshGesture, { passive: true });
 
       document.querySelectorAll("iframe").forEach(frame => {
-        frame.addEventListener("load", () => attachSmoothFrameBridge(frame));
-        attachSmoothFrameBridge(frame);
+        frame.addEventListener("load", () => attachV87FrameBridge(frame));
+        attachV87FrameBridge(frame);
       });
     }
 
