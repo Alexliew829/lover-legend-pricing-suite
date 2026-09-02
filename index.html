@@ -281,10 +281,39 @@
       }
     }
 
+  
+    /* V9.3 lightweight pull-to-refresh indicator.
+       No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
+    #suitePullRefresh {
+      position: fixed;
+      left: 50%;
+      top: 8px;
+      z-index: 99999;
+      transform: translate(-50%, -54px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 3px 12px rgba(0,0,0,.14);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform .12s ease, opacity .12s ease;
+      white-space: nowrap;
+    }
+    #suitePullRefresh.show {
+      opacity: 1;
+    }
+    #suitePullRefresh.ready {
+      font-weight: 800;
+    }
+
   </style>
 </head>
 
 <body>
+  <div id="suitePullRefresh">↓ 下拉刷新 / Tarik untuk Refresh</div>
 
   <button id="settingsButton" class="settings-button" type="button" aria-label="系统设置" title="系统设置">⚙</button>
 
@@ -336,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=9.2-clean"
+          src="cost-calculator/index.html?v=9.3-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -348,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.4-v9.2"
+          src="bonsai-price-calculator/index.html?v=3.4-v9.3"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -729,7 +758,123 @@
     // No touchmove interception, preventDefault, scrollBy, or simulated pull-to-refresh.
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
-    // V9.2: permanently remove legacy Pricing Suite service workers/caches.
+
+    // V9.3: lightweight pull-to-refresh.
+    // Gestures are observed passively in the outer page and both embedded calculators.
+    // Nothing calls preventDefault(), so scrolling remains native and smooth.
+    (function enableSuitePullRefresh() {
+      const indicator = document.getElementById("suitePullRefresh");
+      if (!indicator) return;
+
+      const triggerDistance = 120;
+      let armed = false;
+      let startY = 0;
+      let pullDistance = 0;
+      let refreshing = false;
+
+      function pageAtTop() {
+        return window.scrollY <= 1 && document.documentElement.scrollTop <= 1;
+      }
+
+      function resetIndicator() {
+        armed = false;
+        startY = 0;
+        pullDistance = 0;
+        indicator.classList.remove("show", "ready");
+        indicator.style.transform = "translate(-50%, -54px)";
+        indicator.textContent = "↓ 下拉刷新 / Tarik untuk Refresh";
+      }
+
+      function begin(y) {
+        if (refreshing || !pageAtTop()) {
+          armed = false;
+          return;
+        }
+        armed = true;
+        startY = y;
+        pullDistance = 0;
+      }
+
+      function move(y) {
+        if (!armed || refreshing) return;
+        if (!pageAtTop()) {
+          resetIndicator();
+          return;
+        }
+
+        const delta = y - startY;
+        if (delta <= 0) {
+          resetIndicator();
+          return;
+        }
+
+        pullDistance = delta;
+        const visual = Math.min(delta * 0.28, 44);
+        indicator.style.transform = "translate(-50%, " + (-54 + visual) + "px)";
+        indicator.classList.add("show");
+
+        if (pullDistance >= triggerDistance) {
+          indicator.textContent = "↑ 放开刷新 / Lepas untuk Refresh";
+          indicator.classList.add("ready");
+        } else {
+          indicator.textContent = "↓ 下拉刷新 / Tarik untuk Refresh";
+          indicator.classList.remove("ready");
+        }
+      }
+
+      function end() {
+        if (!armed || refreshing) {
+          resetIndicator();
+          return;
+        }
+
+        const shouldRefresh = pullDistance >= triggerDistance && pageAtTop();
+        armed = false;
+
+        if (!shouldRefresh) {
+          resetIndicator();
+          return;
+        }
+
+        refreshing = true;
+        indicator.textContent = "刷新中... / Refreshing...";
+        indicator.classList.add("show", "ready");
+        indicator.style.transform = "translate(-50%, -8px)";
+
+        setTimeout(() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("_v", "9.3");
+          url.searchParams.set("_refresh", Date.now().toString());
+          window.location.replace(url.toString());
+        }, 120);
+      }
+
+      // Outer page gestures.
+      document.addEventListener("touchstart", (event) => {
+        if (event.touches.length === 1) begin(event.touches[0].clientY);
+      }, { passive: true });
+
+      document.addEventListener("touchmove", (event) => {
+        if (event.touches.length === 1) move(event.touches[0].clientY);
+      }, { passive: true });
+
+      document.addEventListener("touchend", end, { passive: true });
+      document.addEventListener("touchcancel", resetIndicator, { passive: true });
+
+      // Same passive gesture events forwarded by the two same-origin iframes.
+      window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return;
+        const data = event.data;
+        if (!data || data.source !== "lover-legend-pull-v93") return;
+
+        if (data.phase === "start") begin(Number(data.y) || 0);
+        else if (data.phase === "move") move(Number(data.y) || 0);
+        else if (data.phase === "end") end();
+        else if (data.phase === "cancel") resetIndicator();
+      });
+    })();
+
+    // V9.3: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
@@ -749,11 +894,11 @@
 
       if (hadController) {
         try {
-          const reloadKey = "loverLegendPricingSuiteCleanupV92";
+          const reloadKey = "loverLegendPricingSuiteCleanupV93";
           if (!sessionStorage.getItem(reloadKey)) {
             sessionStorage.setItem(reloadKey, "1");
             const url = new URL(window.location.href);
-            url.searchParams.set("_v", "9.2");
+            url.searchParams.set("_v", "9.3");
             url.searchParams.set("_refresh", Date.now().toString());
             window.location.replace(url.toString());
           }

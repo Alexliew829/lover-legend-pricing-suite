@@ -133,5 +133,40 @@
   </main>
 
   <script src="script.js?v=3.4"></script>
+
+<script>
+/* Pricing Suite V9.3 embedded pull gesture bridge.
+   Passive only: does not prevent, replace, or slow native scrolling. */
+(function () {
+  if (window.self === window.top) return;
+
+  function send(phase, y) {
+    try {
+      window.parent.postMessage({
+        source: "lover-legend-pull-v93",
+        phase: phase,
+        y: y
+      }, window.location.origin);
+    } catch (error) {}
+  }
+
+  document.addEventListener("touchstart", function (event) {
+    if (event.touches.length === 1) send("start", event.touches[0].clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function (event) {
+    if (event.touches.length === 1) send("move", event.touches[0].clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchend", function () {
+    send("end", 0);
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", function () {
+    send("cancel", 0);
+  }, { passive: true });
+})();
+</script>
+
 </body>
 </html>
