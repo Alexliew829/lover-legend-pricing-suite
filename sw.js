@@ -1,10 +1,10 @@
-const CACHE = "lover-legend-pricing-v8.9-native-v33";
+const CACHE = "lover-legend-pricing-v9.0-scroll-fix-v34";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./cost-calculator/index.html?v=8.8-native-scroll-v33",
-  "./bonsai-price-calculator/index.html?v=3.3-v8.9"
+  "./cost-calculator/index.html?v=9.0-scroll-fix",
+  "./bonsai-price-calculator/index.html?v=3.4-v9.0"
 ];
 
 self.addEventListener("install", event => {

@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=8.8-native-scroll-v33"
+          src="cost-calculator/index.html?v=9.0-scroll-fix"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.3-v8.9"
+          src="bonsai-price-calculator/index.html?v=3.4-v9.0"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -572,7 +572,7 @@
 
         prepareFrame(frame);
 
-        // V8.9 Stable Frame Resize:
+        // V9.0 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -759,7 +759,7 @@
       (navigator.maxTouchPoints > 1 && window.matchMedia("(pointer: coarse)").matches);
 
     const pullRefreshIndicator = document.getElementById("pullRefreshIndicator");
-    const pullThreshold = 90;
+    const pullThreshold = 110;
     let pullStartY = 0;
     let pullDistance = 0;
     let pullTracking = false;
@@ -790,85 +790,61 @@
       window.location.replace(url.toString());
     }
 
-    function finishPullRefreshGesture() {
-      if (!pullTracking) return;
-      const shouldRefresh = window.scrollY <= 0 && pullDistance >= pullThreshold;
-      pullTracking = false;
-      pullDistance = 0;
-      if (shouldRefresh) runPullRefresh();
-      else hidePullIndicator();
-    }
-
-    // V8.9 Native Scroll:
-    // No more scrollBy / scrollTo bridge and no artificial momentum.
-    // Both iframe documents are made non-scrollable containers, so normal
-    // vertical gestures are left to iPhone/Safari's native parent-page scroll.
-    // We intercept ONLY a downward pull while the whole suite is already at
-    // scrollY=0, solely to keep Home Screen pull-to-refresh available.
-    function attachRefreshOnlyGesture(frame) {
+    // V9.0: iframe gestures are NEVER allowed to trigger Refresh.
+    // They only move the parent page. This prevents a downward finger gesture
+    // inside V3.4 from being mistaken for pull-to-refresh while returning upward.
+    function attachFrameScrollBridge(frame) {
       if (!isMobileDevice || !frame) return;
       try {
         const doc = frame.contentDocument || frame.contentWindow.document;
-        if (!doc || doc.__pricingSuiteV88RefreshOnly) return;
-        doc.__pricingSuiteV88RefreshOnly = true;
+        if (!doc || doc.__pricingSuiteV90ScrollBridge) return;
+        doc.__pricingSuiteV90ScrollBridge = true;
 
-        let tracking = false;
-        let startY = 0;
+        let lastY = 0;
+        let active = false;
 
         doc.addEventListener("touchstart", event => {
-          if (
-            pullRefreshing ||
-            window.scrollY > 0 ||
-            !event.touches ||
-            event.touches.length !== 1
-          ) {
-            tracking = false;
+          if (!event.touches || event.touches.length !== 1) {
+            active = false;
             return;
           }
-          tracking = true;
-          startY = event.touches[0].clientY;
+          active = true;
+          lastY = event.touches[0].clientY;
           pullTracking = false;
           pullDistance = 0;
           hidePullIndicator();
         }, { passive: true });
 
         doc.addEventListener("touchmove", event => {
-          if (!tracking || !event.touches || event.touches.length !== 1) return;
-          const delta = event.touches[0].clientY - startY;
+          if (!active || !event.touches || event.touches.length !== 1) return;
+          const y = event.touches[0].clientY;
+          const delta = lastY - y;
+          lastY = y;
 
-          // Upward/normal vertical movement is never cancelled: Safari handles it.
-          if (delta <= 0 || window.scrollY > 0) {
-            pullTracking = false;
-            pullDistance = 0;
-            hidePullIndicator();
-            tracking = false;
-            return;
+          // Direct 1:1 parent movement; no momentum animation, no refresh logic.
+          if (Math.abs(delta) > 0.25) {
+            window.scrollBy(0, delta);
+            if (event.cancelable) event.preventDefault();
           }
-
-          pullTracking = true;
-          pullDistance = delta;
-          showPullIndicator(pullDistance);
-          if (event.cancelable) event.preventDefault();
         }, { passive: false });
 
-        const endGesture = () => {
-          if (!tracking && !pullTracking) return;
-          tracking = false;
-          finishPullRefreshGesture();
-        };
-        doc.addEventListener("touchend", endGesture, { passive: true });
-        doc.addEventListener("touchcancel", endGesture, { passive: true });
+        const stop = () => { active = false; };
+        doc.addEventListener("touchend", stop, { passive: true });
+        doc.addEventListener("touchcancel", stop, { passive: true });
       } catch (error) {}
     }
 
     if (isMobileDevice) {
-      // Native outer-page pull-to-refresh area (outside the iframes).
+      // Refresh is accepted ONLY from the outer page, at true scroll top,
+      // and only when the gesture begins near the top edge of the screen.
+      // It can never be started from either calculator iframe.
       document.addEventListener("touchstart", event => {
         if (
           pullRefreshing ||
           window.scrollY > 0 ||
           !event.touches ||
-          event.touches.length !== 1
+          event.touches.length !== 1 ||
+          event.touches[0].clientY > 120
         ) {
           pullTracking = false;
           return;
@@ -876,6 +852,7 @@
         pullStartY = event.touches[0].clientY;
         pullTracking = true;
         pullDistance = 0;
+        hidePullIndicator();
       }, { passive: true });
 
       document.addEventListener("touchmove", event => {
@@ -892,12 +869,20 @@
         if (event.cancelable) event.preventDefault();
       }, { passive: false });
 
-      document.addEventListener("touchend", finishPullRefreshGesture, { passive: true });
-      document.addEventListener("touchcancel", finishPullRefreshGesture, { passive: true });
+      const finishOuterPull = () => {
+        if (!pullTracking) return;
+        const shouldRefresh = window.scrollY <= 0 && pullDistance >= pullThreshold;
+        pullTracking = false;
+        pullDistance = 0;
+        if (shouldRefresh) runPullRefresh();
+        else hidePullIndicator();
+      };
+      document.addEventListener("touchend", finishOuterPull, { passive: true });
+      document.addEventListener("touchcancel", finishOuterPull, { passive: true });
 
       document.querySelectorAll("iframe").forEach(frame => {
-        frame.addEventListener("load", () => attachRefreshOnlyGesture(frame));
-        attachRefreshOnlyGesture(frame);
+        frame.addEventListener("load", () => attachFrameScrollBridge(frame));
+        attachFrameScrollBridge(frame);
       });
     }
 
@@ -913,7 +898,7 @@
         } catch (error) {}
 
         navigator.serviceWorker
-          .register("sw.js?v=8.8-native-scroll-v33", { updateViaCache: "none" })
+          .register("sw.js?v=9.0-scroll-fix", { updateViaCache: "none" })
           .then(registration => registration.update())
           .catch(() => {});
       });
