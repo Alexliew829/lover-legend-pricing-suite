@@ -412,20 +412,33 @@ function enablePullToRefresh() {
   }, { passive: true });
 }
 
+function isEmbeddedInPricingSuite() {
+  try {
+    return window.self !== window.top;
+  } catch (error) {
+    return true;
+  }
+}
+
 async function startCalculator() {
-  const reloading = await clearLegacyPwaCache();
-  if (reloading) return;
+  // V3.4 standalone keeps its own PWA cleanup and pull-to-refresh.
+  // When embedded in Pricing Suite V9.2, both are disabled so the child frame
+  // cannot interfere with the parent page's native scrolling/refresh behavior.
+  if (!isEmbeddedInPricingSuite()) {
+    const reloading = await clearLegacyPwaCache();
+    if (reloading) return;
+    enablePullToRefresh();
+  }
 
   resetCurrencyToDefault();
   resetCalculator();
   loadExchangeRates();
 }
 
-enablePullToRefresh();
 startCalculator();
 
 window.addEventListener("pageshow", function (event) {
-  if (event.persisted) {
+  if (event.persisted && !isEmbeddedInPricingSuite()) {
     location.reload();
   } else {
     resetCurrencyToDefault();

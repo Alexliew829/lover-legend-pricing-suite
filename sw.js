@@ -1,29 +1,32 @@
-const CACHE = "lover-legend-pricing-v9.1-native-scroll-v34";
-const CORE = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./cost-calculator/index.html?v=9.1-native-scroll",
-  "./bonsai-price-calculator/index.html?v=3.4-v9.1"
-];
-
-self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
+// Lover Legend Pricing Suite V9.2 - legacy service worker cleanup
+self.addEventListener("install", function () {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(
-    keys.filter(key => key !== CACHE).map(key => caches.delete(key))
-  )));
-  self.clients.claim();
+self.addEventListener("activate", function (event) {
+  event.waitUntil((async function () {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(function (key) {
+        return caches.delete(key);
+      }));
+    } catch (error) {}
+
+    try {
+      await self.registration.unregister();
+    } catch (error) {}
+
+    try {
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true
+      });
+      await Promise.all(clients.map(function (client) {
+        return client.navigate(client.url);
+      }));
+    } catch (error) {}
+  })());
 });
 
-self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE).then(cache => cache.put(event.request, copy));
-    return response;
-  }).catch(() => caches.match(event.request)));
-});
+// No fetch interception: all requests return to normal browser networking.
+self.addEventListener("fetch", function () {});
