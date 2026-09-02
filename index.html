@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=3.3-v8.8"
+          src="bonsai-price-calculator/index.html?v=3.3-v8.9"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -572,7 +572,7 @@
 
         prepareFrame(frame);
 
-        // V8.8 Stable Frame Resize:
+        // V8.9 Stable Frame Resize:
         // Never collapse the iframe to 1px before measuring.
         // That old technique caused the cost calculator to visibly "收起"
         // on the first Calculate after selecting an imported product.
@@ -799,7 +799,7 @@
       else hidePullIndicator();
     }
 
-    // V8.8 Native Scroll:
+    // V8.9 Native Scroll:
     // No more scrollBy / scrollTo bridge and no artificial momentum.
     // Both iframe documents are made non-scrollable containers, so normal
     // vertical gestures are left to iPhone/Safari's native parent-page scroll.

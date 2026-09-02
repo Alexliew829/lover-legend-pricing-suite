@@ -1,4 +1,4 @@
-// Lover Legend Bonsai Price Calculator V3.3
+// Lover Legend Bonsai Price Calculator V3.4
 const retailInput = document.getElementById("retailPrice");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -137,15 +137,37 @@ function updateForeignPrice(livePrice) {
   rateLineEl.textContent = formatRate(currency, rate);
 }
 
+function hasRetailPrice() {
+  return retailInput.value.trim() !== "" && cleanNumber(retailInput.value) > 0;
+}
+
+function getManualLivePrice() {
+  return cleanNumber(livePriceEl.value);
+}
+
+function setLiveInputMode(retailMode, livePrice) {
+  livePriceEl.readOnly = retailMode;
+  livePriceEl.classList.toggle("auto-live", retailMode);
+
+  if (retailMode) {
+    livePriceEl.value = Number(livePrice).toLocaleString("en-MY", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+}
+
 function calculate() {
-  const retail = cleanNumber(retailInput.value);
+  const retailMode = hasRetailPrice();
+  const retail = retailMode ? cleanNumber(retailInput.value) : 0;
   const tiktokPrice = retail * 0.82;
-  const livePrice = getLivePrice(retail);
+  const livePrice = retailMode ? getLivePrice(retail) : getManualLivePrice();
+
+  setLiveInputMode(retailMode, livePrice);
 
   const sameRackDiscount = livePrice >= 500 ? "-RM30.00" : "-";
 
   let pickupDiscount;
-
   if (livePrice >= 2000) {
     pickupDiscount = 100;
   } else if (livePrice >= 500) {
@@ -154,17 +176,19 @@ function calculate() {
     pickupDiscount = 20;
   }
 
-  const pickupPrice = retail === 0 ? 0 : livePrice - pickupDiscount;
-  const minimumPrice =
-    retail <= 500
+  const pickupPrice = livePrice > 0 ? Math.max(0, livePrice - pickupDiscount) : 0;
+  const minimumPrice = livePrice <= 0
+    ? 0
+    : (retailMode && retail <= 500)
       ? roundToNearest10(retail * 0.9)
-      : roundToNearest50(livePrice * 0.85);
+      : (!retailMode && livePrice <= 500)
+        ? roundToNearest10(livePrice * 0.9)
+        : roundToNearest50(livePrice * 0.85);
 
-  livePriceEl.textContent = formatRM(livePrice);
   sameRackPriceEl.textContent = sameRackDiscount;
   pickupPriceEl.textContent = formatRM(pickupPrice);
   minimumPriceEl.textContent = formatRM(minimumPrice);
-  tiktokPriceEl.textContent = "(" + formatRM(tiktokPrice) + ")";
+  tiktokPriceEl.textContent = retailMode ? "(" + formatRM(tiktokPrice) + ")" : "";
   updateForeignPrice(livePrice);
 }
 
@@ -206,11 +230,16 @@ retailInput.addEventListener("focus", function () {
 });
 
 retailInput.addEventListener("blur", function () {
-  const value = cleanNumber(retailInput.value);
-  retailInput.value = value.toLocaleString("en-MY", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  if (retailInput.value.trim() === "" || cleanNumber(retailInput.value) <= 0) {
+    retailInput.value = "";
+  } else {
+    const value = cleanNumber(retailInput.value);
+    retailInput.value = value.toLocaleString("en-MY", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+  calculate();
 });
 
 retailInput.addEventListener("input", calculate);
@@ -221,25 +250,50 @@ retailInput.addEventListener("keydown", function (event) {
   }
 });
 
+livePriceEl.addEventListener("focus", function () {
+  if (!livePriceEl.readOnly) livePriceEl.select();
+});
+
+livePriceEl.addEventListener("input", function () {
+  if (!livePriceEl.readOnly) calculate();
+});
+
+livePriceEl.addEventListener("blur", function () {
+  if (!livePriceEl.readOnly) {
+    const value = getManualLivePrice();
+    livePriceEl.value = value > 0
+      ? value.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : "";
+    calculate();
+  }
+});
+
+livePriceEl.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") livePriceEl.blur();
+});
+
 currencySelect.addEventListener("change", function () {
   calculate();
 });
 
 clearBtn.addEventListener("click", function () {
-  retailInput.value = "0.00";
+  retailInput.value = "";
+  livePriceEl.readOnly = false;
+  livePriceEl.classList.remove("auto-live");
+  livePriceEl.value = "";
   retailInput.focus();
   calculate();
 });
 
 function resetCalculator() {
-  retailInput.value = "0.00";
+  retailInput.value = "";
+  livePriceEl.readOnly = false;
+  livePriceEl.classList.remove("auto-live");
+  livePriceEl.value = "";
   calculate();
 }
 
 async function clearLegacyPwaCache() {
-  // When embedded in Pricing Suite, do not unregister the suite service worker/cache.
-  if (window.self !== window.top) return false;
-
   let hadController = false;
 
   try {
@@ -367,11 +421,7 @@ async function startCalculator() {
   loadExchangeRates();
 }
 
-// Keep V3.3 pull-to-refresh when opened by itself.
-// The suite parent owns scrolling/refresh while this page is embedded.
-if (window.self === window.top) {
-  enablePullToRefresh();
-}
+enablePullToRefresh();
 startCalculator();
 
 window.addEventListener("pageshow", function (event) {

@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V8.8",
+  "name": "Lover Legend Pricing Suite V8.9",
   "short_name": "Pricing Suite",
   "start_url": "./",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "V8.8 uses native mobile page scrolling while preserving top pull-to-refresh; cost calculator V8.8 with Bonsai Calculator V3.3."
+  "description": "V8.9 uses native mobile page scrolling while preserving top pull-to-refresh; cost calculator V8.9 with Bonsai Calculator V3.3."
 }
