@@ -1,7 +1,7 @@
 {
   "name": "Kalkulator Harga Bonsai",
   "short_name": "Bonsai Harga",
-  "description": "Lover Legend Gardening - Kalkulator Harga Bonsai / 盆景价格计算器",
+  "description": "Lover Legend Gardening - Kalkulator Harga Bonsai V5.2 / 盆景价格计算器 + 印尼运费估算",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V9.5</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V9.6</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1043,7 +1043,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V9.5: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V9.6: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1136,7 +1136,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V9.5: one-way mapping only.
+          // V9.6: one-way mapping only.
           // Import Cost System minimumPrice -> Pricing Calculator actualPrice.
           // No write-back API exists in this calculator.
           minimumPrice: parseCloudNumber(
@@ -1356,7 +1356,7 @@ body {
 
       actualPriceInput.value = safeMinimumPrice.toFixed(2);
 
-      // V9.5 Final:
+      // V9.6 Final:
       // This update can happen after the first Calculate because cloud sync
       // finishes asynchronously. Never clear the calculation result here.
       // Otherwise the first result disappears before the user can read it.
@@ -1383,7 +1383,7 @@ body {
     function applySelectedImportProductFast(record) {
       if (!record) return;
 
-      // V9.5 Direct Local Sync:
+      // V9.6 Direct Local Sync:
       // Import System and Pricing Suite are under the same origin.
       // Read Import System's own localStorage synchronously first.
       syncImportProductsFromSharedLocalStorage();
@@ -1486,7 +1486,7 @@ body {
 
       if (!query) return true;
 
-      // V9.5：型号支持“从左到右”的即时前缀搜索。
+      // V9.6：型号支持“从左到右”的即时前缀搜索。
       // 例如：
       // BX5   -> BX500 / BX520 / BX580...
       // BX58  -> BX580...
@@ -1805,7 +1805,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V9.5: minimumPrice is only the initial value for actualPrice.
+      // V9.6: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2264,7 +2264,7 @@ window.onload = () => {
     renderImportProductOptions();
   }
 
-  // V9.5: cloud is a delayed background fallback, never a blocker.
+  // V9.6: cloud is a delayed background fallback, never a blocker.
   window.setTimeout(() => {
     void refreshImportProductsFromCloud();
   }, 1200);
@@ -2425,7 +2425,7 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V9.5 Final:
+      // V9.6 Final:
       // User changes to cost data invalidate the old calculation result,
       // so hide/clear the old result, but preserve actualPrice/minimumPrice.
       const clearOldQuote = () => clearCalculationResult(false);
@@ -2457,7 +2457,7 @@ window.onload = () => {
     }
   };
 
-  // V9.5: only one background cloud sync per page load.
+  // V9.6: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
@@ -2482,7 +2482,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V9.5 embedded pull gesture bridge.
+/* Pricing Suite V9.6 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;
@@ -2490,7 +2490,7 @@ window.onload = () => {
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v95",
+        source: "lover-legend-pull-v96",
         phase: phase,
         y: y
       }, window.location.origin);
