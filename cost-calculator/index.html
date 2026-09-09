@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V9.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V9.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1043,7 +1043,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V9.7: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V9.8: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1136,14 +1136,9 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V9.7: this is only the local/stored fallback.
-          // The effective minimum price (manual OR automatic) is refreshed
-          // through Import System V16.2 publicProductPricing below.
-          minimumPrice: parseCloudNumber(
-            product?.minimumPrice ??
-            source?.minimumPrice ??
-            0
-          ),
+          // V9.8: effective minimumPrice is supplied only by
+          // Import V16.2 publicProductPricing after cloud refresh.
+          minimumPrice: 0,
           mappingStatus: batch ? "BATCH_MATCHED" : "BATCH_MISSING",
           mappingDebug: {
             importNumber,
@@ -1250,7 +1245,7 @@ body {
     let actualPriceManuallyEdited = false;
 
 
-    async function fetchEffectiveMinimumPriceMapV97() {
+    async function fetchEffectiveMinimumPriceMapV98() {
       const response = await fetch(IMPORT_SYSTEM_CLOUD_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1268,38 +1263,32 @@ body {
       }
 
       const byId = new Map();
-      const byName = new Map();
 
       data.products.forEach(item => {
-        const id = String(item?.id || "").trim();
-        const name = normalizeImportProductSearchText(item?.name || "");
+        const id = String(item?.id || "").trim().toLocaleLowerCase();
         const value = Number(item?.minimumPrice);
 
-        if (!Number.isFinite(value) || value < 0) return;
-        if (id) byId.set(id.toLocaleLowerCase(), value);
-        if (name) byName.set(name, value);
+        if (!id || !Number.isFinite(value) || value < 0) return;
+        byId.set(id, value);
       });
 
-      return { byId, byName };
+      return byId;
     }
 
-    function applyEffectiveMinimumPricesV97(records, pricingMap) {
-      if (!Array.isArray(records) || !pricingMap) return records || [];
+    function applyEffectiveMinimumPricesV98(records, minimumPriceById) {
+      if (!Array.isArray(records)) return [];
 
       return records.map(record => {
         const id = String(record?.productId || "").trim().toLocaleLowerCase();
-        const name = normalizeImportProductSearchText(record?.productName || "");
 
-        let effective = null;
-        if (id && pricingMap.byId.has(id)) {
-          effective = pricingMap.byId.get(id);
-        } else if (name && pricingMap.byName.has(name)) {
-          effective = pricingMap.byName.get(name);
-        }
+        // V9.8: publicProductPricing is the ONLY truth for minimumPrice.
+        // No Products.minimumPrice fallback and no local recalculation.
+        const effective =
+          id && minimumPriceById?.has(id)
+            ? minimumPriceById.get(id)
+            : 0;
 
-        return Number.isFinite(effective)
-          ? { ...record, minimumPrice: effective }
-          : record;
+        return { ...record, minimumPrice: effective };
       });
     }
 
@@ -1351,21 +1340,22 @@ body {
 
         let records = buildCloudImportProductRecords(data);
 
-        // Import V16.2 publicProductPricing returns the effective minimum price
-        // exactly as Import displays it, including both manual overrides and
-        // automatically calculated minimum prices.
-        try {
-          const effectivePricing = await fetchEffectiveMinimumPriceMapV97();
-          records = applyEffectiveMinimumPricesV97(records, effectivePricing);
-        } catch (pricingError) {
-          console.warn("读取有效最低售价失败，暂用本机/Products最低售价", pricingError);
-        }
+        // V9.8: Import V16.2 publicProductPricing is the sole authority for
+        // the final effective minimumPrice (manual or automatic).
+        const effectiveMinimumPriceById =
+          await fetchEffectiveMinimumPriceMapV98();
+
+        records = applyEffectiveMinimumPricesV98(
+          records,
+          effectiveMinimumPriceById
+        );
 
         localStorage.setItem(
           IMPORT_UNIT_PRICE_KEY,
           JSON.stringify({
-            version: 21,
+            version: 22,
             exportedAt: new Date().toISOString(),
+            source: "import-v16.2-publicProductPricing",
             records
           })
         );
@@ -1420,7 +1410,7 @@ body {
 
       actualPriceInput.value = safeMinimumPrice.toFixed(2);
 
-      // V9.7 Final:
+      // V9.8 Final:
       // This update can happen after the first Calculate because cloud sync
       // finishes asynchronously. Never clear the calculation result here.
       // Otherwise the first result disappears before the user can read it.
@@ -1447,7 +1437,7 @@ body {
     function applySelectedImportProductFast(record) {
       if (!record) return;
 
-      // V9.7 Direct Local Sync:
+      // V9.8 Direct Local Sync:
       // Import System and Pricing Suite are under the same origin.
       // Read Import System's own localStorage synchronously first.
       syncImportProductsFromSharedLocalStorage();
@@ -1471,9 +1461,9 @@ body {
           if (selectedKey !== activeImportProductKey) return;
           if (actualPriceManuallyEdited) return;
 
-          // Re-read Import System's shared local data after cloud fallback.
-          syncImportProductsFromSharedLocalStorage();
-
+          // V9.8: read the API-enriched cache directly.
+          // Do NOT rebuild from raw Import localStorage here, otherwise the
+          // effective minimumPrice returned by publicProductPricing is lost.
           const latestRecord =
             findFreshImportProductRecord(freshestLocal) ||
             freshestLocal;
@@ -1550,7 +1540,7 @@ body {
 
       if (!query) return true;
 
-      // V9.7：型号支持“从左到右”的即时前缀搜索。
+      // V9.8：型号支持“从左到右”的即时前缀搜索。
       // 例如：
       // BX5   -> BX500 / BX520 / BX580...
       // BX58  -> BX580...
@@ -1701,7 +1691,7 @@ body {
 
       importProductRecords = readImportUnitPriceRecords();
       visibleImportProductRecords = importProductRecords.filter(record => {
-        // V9.7 search scope: product name + product ID only.
+        // V9.8 search scope: product name + product ID only.
         // Examples:
         // BX580 -> BX580
         // 0099  -> PZ0099
@@ -1892,7 +1882,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V9.7: minimumPrice is only the initial value for actualPrice.
+      // V9.8: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2351,7 +2341,7 @@ window.onload = () => {
     renderImportProductOptions();
   }
 
-  // V9.7: cloud is a delayed background fallback, never a blocker.
+  // V9.8: cloud is a delayed background fallback, never a blocker.
   window.setTimeout(() => {
     void refreshImportProductsFromCloud();
   }, 1200);
@@ -2512,7 +2502,7 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V9.7 Final:
+      // V9.8 Final:
       // User changes to cost data invalidate the old calculation result,
       // so hide/clear the old result, but preserve actualPrice/minimumPrice.
       const clearOldQuote = () => clearCalculationResult(false);
@@ -2544,18 +2534,22 @@ window.onload = () => {
     }
   };
 
-  // V9.7: only one background cloud sync per page load.
+  // V9.8: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
     const options = document.getElementById("importProductOptions");
     if (options) options.hidden = true;
-    syncImportProductsFromSharedLocalStorage();
+    if (!importProductsCloudReady) {
+      syncImportProductsFromSharedLocalStorage();
+    }
     rerenderImportProducts();
   });
 
   window.addEventListener("focus", () => {
-    syncImportProductsFromSharedLocalStorage();
+    if (!importProductsCloudReady) {
+      syncImportProductsFromSharedLocalStorage();
+    }
     rerenderImportProducts();
   });
 
@@ -2569,7 +2563,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V9.7 embedded pull gesture bridge.
+/* Pricing Suite V9.8 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;
@@ -2577,7 +2571,7 @@ window.onload = () => {
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v97",
+        source: "lover-legend-pull-v98",
         phase: phase,
         y: y
       }, window.location.origin);
