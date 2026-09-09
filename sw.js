@@ -1,4 +1,4 @@
-// Lover Legend Pricing Suite V9.8 - legacy service worker cleanup
+// Lover Legend Pricing Suite V9.9 - legacy service worker cleanup
 self.addEventListener("install", function () {
   self.skipWaiting();
 });

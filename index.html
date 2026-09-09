@@ -282,7 +282,7 @@
     }
 
   
-    /* V9.8 lightweight pull-to-refresh indicator.
+    /* V9.9 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=9.8-pull-refresh"
+          src="cost-calculator/index.html?v=9.9-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=5.9-v9.8"
+          src="bonsai-price-calculator/index.html?v=5.9-v9.9"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -759,7 +759,7 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V9.8: lightweight pull-to-refresh.
+    // V9.9: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -843,7 +843,7 @@
 
         setTimeout(() => {
           const url = new URL(window.location.href);
-          url.searchParams.set("_v", "9.8");
+          url.searchParams.set("_v", "9.9");
           url.searchParams.set("_refresh", Date.now().toString());
           window.location.replace(url.toString());
         }, 120);
@@ -865,7 +865,7 @@
       window.addEventListener("message", (event) => {
         if (event.origin !== window.location.origin) return;
         const data = event.data;
-        if (!data || data.source !== "lover-legend-pull-v98") return;
+        if (!data || data.source !== "lover-legend-pull-v99") return;
 
         if (data.phase === "start") begin(Number(data.y) || 0);
         else if (data.phase === "move") move(Number(data.y) || 0);
@@ -874,7 +874,7 @@
       });
     })();
 
-    // V9.8: permanently remove legacy Pricing Suite service workers/caches.
+    // V9.9: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
@@ -894,11 +894,11 @@
 
       if (hadController) {
         try {
-          const reloadKey = "loverLegendPricingSuiteCleanupV98";
+          const reloadKey = "loverLegendPricingSuiteCleanupV99";
           if (!sessionStorage.getItem(reloadKey)) {
             sessionStorage.setItem(reloadKey, "1");
             const url = new URL(window.location.href);
-            url.searchParams.set("_v", "9.8");
+            url.searchParams.set("_v", "9.9");
             url.searchParams.set("_refresh", Date.now().toString());
             window.location.replace(url.toString());
           }
