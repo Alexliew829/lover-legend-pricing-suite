@@ -263,7 +263,7 @@
   <script src="script.js?v=5.9"></script>
 
 <script>
-/* Pricing Suite V9.9 embedded pull gesture bridge.
+/* Pricing Suite V10.0 embedded pull gesture bridge.
    Passive only: never blocks or replaces native scrolling. */
 (function () {
   if (window.self === window.top) return;
@@ -271,7 +271,7 @@
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v99",
+        source: "lover-legend-pull-v100",
         phase: phase,
         y: y
       }, window.location.origin);
