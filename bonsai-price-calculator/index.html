@@ -9,7 +9,7 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>Kalkulator Harga Bonsai | 盆景价格计算器</title>
-  <link rel="stylesheet" href="style.css?v=4.5" />
+  <link rel="stylesheet" href="style.css?v=5.3" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
 
@@ -30,7 +30,7 @@
         <div class="title-ms">Kalkulator Harga Bonsai</div>
         <div class="company-line">
           <div class="company">Lover Legend Gardening</div>
-          <div class="version">V5.2</div>
+          <div class="version">V5.9</div>
         </div>
       </div>
 
@@ -43,18 +43,29 @@
       <div class="input-wrap">
         <span class="rm-prefix">RM</span>
         <input id="retailPrice" type="text" inputmode="decimal" value="" placeholder="可留空 / Boleh kosong" autocomplete="off" />
-        <span id="tiktokPrice" class="tiktok-price">(RM0.00)</span>
+        <span id="tiktokPrice" class="tiktok-price">(0.00)</span>
         <button id="clearBtn" type="button" aria-label="Clear price">×</button>
       </div>
     </section>
 
     <section class="price-list">
-      <div class="price-row highlight">
-        <div class="label">
-          <span class="cn">直播售价</span>
-          <span class="ms">Harga Live</span>
+      <div class="price-row highlight product-live-row">
+        <div class="product-picker">
+          <div class="product-label">产品编号 / Product ID</div>
+          <div class="product-input-wrap">
+            <input id="productIdInput" type="text" value="" placeholder="PZ / 产品" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <button id="clearProductBtn" type="button" aria-label="Clear product">×</button>
+          </div>
+          <div id="productName" class="product-name" hidden></div>
+          <div id="productDropdown" class="product-dropdown" hidden></div>
         </div>
-        <div class="live-input-wrap"><span class="live-rm-prefix">RM</span><input id="livePrice" class="live-price-input" type="text" inputmode="decimal" value="" placeholder="0.00" autocomplete="off" /></div>
+        <div class="live-panel">
+          <div class="label live-label">
+            <span class="cn">直播售价</span>
+            <span class="ms">Harga Live</span>
+          </div>
+          <div class="live-input-wrap"><span class="live-rm-prefix">RM</span><input id="livePrice" class="live-price-input" type="text" inputmode="decimal" value="" placeholder="0.00" autocomplete="off" /></div>
+        </div>
       </div>
 
       <div class="currency-row">
@@ -249,22 +260,34 @@
     </section>
   </main>
 
-  <script src="script.js?v=5.2"></script>
+  <script src="script.js?v=5.9"></script>
 
 <script>
-/* Pricing Suite V9.6 embedded pull gesture bridge.
-   Passive only: it never prevents or replaces native scrolling. */
+/* Pricing Suite V9.7 embedded pull gesture bridge.
+   Passive only: never blocks or replaces native scrolling. */
 (function () {
   if (window.self === window.top) return;
+
   function send(phase, y) {
     try {
-      window.parent.postMessage({source:"lover-legend-pull-v96",phase:phase,y:y}, window.location.origin);
+      window.parent.postMessage({
+        source: "lover-legend-pull-v97",
+        phase: phase,
+        y: y
+      }, window.location.origin);
     } catch (error) {}
   }
-  document.addEventListener("touchstart",function(e){if(e.touches.length===1)send("start",e.touches[0].clientY);},{passive:true});
-  document.addEventListener("touchmove",function(e){if(e.touches.length===1)send("move",e.touches[0].clientY);},{passive:true});
-  document.addEventListener("touchend",function(){send("end",0);},{passive:true});
-  document.addEventListener("touchcancel",function(){send("cancel",0);},{passive:true});
+
+  document.addEventListener("touchstart", function (event) {
+    if (event.touches.length === 1) send("start", event.touches[0].clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function (event) {
+    if (event.touches.length === 1) send("move", event.touches[0].clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchend", function () { send("end", 0); }, { passive: true });
+  document.addEventListener("touchcancel", function () { send("cancel", 0); }, { passive: true });
 })();
 </script>
 
