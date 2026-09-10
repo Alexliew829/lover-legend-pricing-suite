@@ -1,4 +1,4 @@
-// Lover Legend Bonsai Price Calculator V6.0
+// Lover Legend Bonsai Price Calculator V6.1
 const retailInput = document.getElementById("retailPrice");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -85,9 +85,9 @@ function getLivePrice(retail) {
 }
 
 
-// V6.0 accepted pricing logic:
+// V6.1 accepted pricing logic:
 // 1) TikTok = retail -18% (x0.82), rounded to nearest RM10.
-// 2) Live price keeps the proven V6.0 rule above.
+// 2) Live price keeps the proven V6.1 rule above.
 // 3) Suggested minimum = live x80%, rounded to nearest RM10.
 // 4) Product mode preserves the exact Import minimum and finds the first safe retail price ending in 80.
 function getSuggestedMinimumFromLive(livePrice) {
@@ -102,7 +102,7 @@ function reversePriceFromMinimum(importMinimum) {
   const target = Math.max(0, Number(importMinimum) || 0);
   if (target <= 0) return { retail: 0, live: 0, suggestedMinimum: 0 };
 
-  // V6.0 low-price product reverse rule:
+  // V6.1 low-price product reverse rule:
   // Import minimum -> /80% -> live rounded to nearest RM10.
   // When that live price is <= RM500, retail must be the next STRICTLY HIGHER ...80 price.
   // Examples: 210 -> 260 -> 280, 300 -> 380 -> 480, 380 -> 480 -> 580.
@@ -137,14 +137,17 @@ function normalizeProductSearch(value) {
   return String(value || "").toUpperCase().replace(/\s+/g, "").trim();
 }
 
-const PRODUCT_PREFIX_RULES_V60 = [["黄杨","BX"],["凌珊","BB"],["罗汉松","PD"],["李氏樱桃","SK"],["水梅","JL"],["酸豆","AS"],["寿娘子","SC"],["三角梅","BV"],["七里香","MR"],["九里香","MR"],["仙丹","IX"],["福建茶","HK"]];
-function compatibleProductIdsV60(product) {
+const PRODUCT_PREFIX_RULES_V61 = [["黄杨","BX"],["凌珊","BB"],["罗汉松","PD"],["李氏樱桃","SK"],["水梅","JL"],["酸豆","AS"],["寿娘子","SC"],["三角梅","BV"],["七里香","MR"],["九里香","MR"],["仙丹","IX"],["福建茶","HK"]];
+const LEGACY_PRODUCT_ID_ALIASES_V61 = Object.freeze({ PS0001:"BX0001", PS0002:"AS0002", PZ0006:"BX0006" });
+function compatibleProductIdsV61(product) {
   const current = normalizeProductId(product?.id);
   const match = current.match(/^[A-Z]{2}(\d{4})$/);
   if (!match) return [current];
+  if (current.startsWith("PS")) return [current];
   const compactName = String(product?.name || "").replace(/\s+/g, "");
-  const rule = PRODUCT_PREFIX_RULES_V60.find(([name]) => compactName.includes(name));
-  return [...new Set([current, `PZ${match[1]}`, rule ? `${rule[1]}${match[1]}` : ""].filter(Boolean))];
+  const rule = PRODUCT_PREFIX_RULES_V61.find(([name]) => compactName.includes(name));
+  const knownLegacy = Object.keys(LEGACY_PRODUCT_ID_ALIASES_V61).filter(oldId => LEGACY_PRODUCT_ID_ALIASES_V61[oldId] === current);
+  return [...new Set([current, `PZ${match[1]}`, rule ? `${rule[1]}${match[1]}` : "", ...knownLegacy].filter(Boolean))];
 }
 
 function formatPriceInput(value) {
@@ -163,7 +166,7 @@ function setProductMode(product) {
   const minimum = Math.max(0, Number(selectedProduct.minimumPrice) || 0);
   const prices = reversePriceFromMinimum(minimum);
 
-  // V6.0: never inherit the previous product's generated prices.
+  // V6.1: never inherit the previous product's generated prices.
   // This is especially important when the newly typed exact PZ has minimumPrice = 0/blank.
   retailInput.value = prices.retail > 0 ? formatPriceInput(prices.retail) : "";
   livePriceEl.value = prices.live > 0 ? formatPriceInput(prices.live) : "";
@@ -205,7 +208,7 @@ async function loadProductPricing(forceRetry) {
   productPricingLoading = (async function () {
     let rawProducts;
     let lastError;
-    // V6.0: Apps Script can occasionally be cold/transient. Retry once before showing unavailable.
+    // V6.1: Apps Script can occasionally be cold/transient. Retry once before showing unavailable.
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         rawProducts = await fetchProductPricingOnce();
@@ -224,7 +227,7 @@ async function loadProductPricing(forceRetry) {
         name: String(product.name || "").trim(),
         normalizedName: normalizeProductSearch(product.name),
         minimumPrice: Math.max(0, Number(product.minimumPrice) || 0),
-        compatibleIds: compatibleProductIdsV60(product)
+        compatibleIds: compatibleProductIdsV61(product)
       };
     }).filter(function (product) { return product.normalizedId; });
     productPricingLoaded = true;
@@ -256,7 +259,7 @@ function renderProductMatches(query) {
   const normalized = normalizeProductSearch(query);
   if (!normalized) { closeProductDropdown(); return; }
 
-  // V6.0: one input searches Product ID OR product name, like the pricing calculator search.
+  // V6.1: one input searches Product ID OR product name, like the pricing calculator search.
   // No fuzzy/reversed-letter matching: typed text must appear in the original order.
   const matches = productPricingList.filter(function (product) {
     const id = product.normalizedId || "";
@@ -306,8 +309,12 @@ async function handleProductIdInput() {
   try {
     await loadProductPricing(false);
 
-    // V6.0: a complete valid PZ typed directly must behave exactly like clicking a dropdown result.
-    const exact = productPricingList.find(function (product) { return (product.compatibleIds || [product.normalizedId]).includes(normalized); });
+    // V6.1: a complete valid PZ typed directly must behave exactly like clicking a dropdown result.
+    const exactCurrent = productPricingList.find(function (product) { return product.normalizedId === normalized; });
+    const aliasMatches = exactCurrent ? [] : productPricingList.filter(function (product) {
+      return (product.compatibleIds || [product.normalizedId]).includes(normalized);
+    });
+    const exact = exactCurrent || (aliasMatches.length === 1 ? aliasMatches[0] : null);
     if (exact) {
       chooseProduct(exact);
       return;
@@ -366,7 +373,7 @@ function formatIDRCompact(value) {
 }
 
 function formatForeignPrice(currency, value) {
-  // V6.0: MYR/TWD are already named in the currency selector, so the large
+  // V6.1: MYR/TWD are already named in the currency selector, so the large
   // number does not repeat RM or NT$. This prevents high values being clipped.
   if (currency === "MYR") {
     return Number(value || 0).toLocaleString("en-MY", {
@@ -477,7 +484,7 @@ async function loadExchangeRates() {
   calculate();
 }
 
-// Indonesia inland estimate V6.0.
+// Indonesia inland estimate V6.1.
 // Reference model for large-cargo pre-sale quoting. J&T Cargo's official checker uses
 // origin, destination, weight and dimensions; this static GitHub Pages app has no live tariff API.
 // Cargo volumetric weight uses L*W*H/5000. Rates below are conservative market-reference bands,
@@ -503,7 +510,7 @@ function formatIndonesiaSeaInput() {
 }
 
 
-// V6.0: exact 5-digit Indonesia Postcode -> province detection.
+// V6.1: exact 5-digit Indonesia Postcode -> province detection.
 // No broad numeric ranges are used. A national postcode dataset is loaded once,
 // converted to an exact postcode->province map, then cached on the device.
 const POSTCODE_PROVINCE_MAP = {
@@ -545,7 +552,7 @@ const PROVINCE_CODE_MAP = {
 };
 
 
-// V6.0: representative postcode used only when the presenter manually changes region.
+// V6.1: representative postcode used only when the presenter manually changes region.
 // A real customer postcode entered by the user still takes priority and is precisely detected.
 const REGION_DEFAULT_POSTCODE = {
   JAKARTA:"10310", BANTEN:"15111", WEST_JAVA:"16110", CENTRAL_JAVA:"50111", YOGYAKARTA:"55111", EAST_JAVA:"60111",
@@ -690,7 +697,7 @@ function calculateIndonesiaShipping() {
   const billKg = Math.max(chargeKg, z[1]);
   let inlandIdr = z[0] * billKg;
 
-  // V6.0: region-based commercial safety buffer for pre-sale quotes.
+  // V6.1: region-based commercial safety buffer for pre-sale quotes.
   // This buffer is NOT an official tax/fee. It protects against inland cargo price variation,
   // handling and other possible surcharges before the logistics company confirms the final charge.
   const BUFFER_15 = new Set(["JAKARTA","BANTEN","WEST_JAVA","CENTRAL_JAVA","YOGYAKARTA","EAST_JAVA"]);
@@ -725,7 +732,7 @@ function calculateIndonesiaShipping() {
   note.innerHTML = "J&T Cargo 市场参考估算，不是 J&T 官方实时报价。" + pc + " 实际收费以物流公司确认为准。<br>Anggaran rujukan pasaran J&T Cargo, bukan kadar rasmi masa nyata. Caj sebenar tertakluk kepada pengesahan syarikat logistik.";
 }
 
-// Taiwan freight estimate V6.0. 3-digit district prefixes are sufficient for city/county routing.
+// Taiwan freight estimate V6.1. 3-digit district prefixes are sufficient for city/county routing.
 const TW_PREFIX = {"100":"TAIPEI","103":"TAIPEI","104":"TAIPEI","105":"TAIPEI","106":"TAIPEI","108":"TAIPEI","110":"TAIPEI","111":"TAIPEI","112":"TAIPEI","114":"TAIPEI","115":"TAIPEI","116":"TAIPEI","200":"KEELUNG","201":"KEELUNG","202":"KEELUNG","203":"KEELUNG","204":"KEELUNG","205":"KEELUNG","206":"KEELUNG","207":"NEW_TAIPEI","208":"NEW_TAIPEI","220":"NEW_TAIPEI","221":"NEW_TAIPEI","222":"NEW_TAIPEI","223":"NEW_TAIPEI","224":"NEW_TAIPEI","226":"NEW_TAIPEI","231":"NEW_TAIPEI","232":"NEW_TAIPEI","233":"NEW_TAIPEI","234":"NEW_TAIPEI","235":"NEW_TAIPEI","236":"NEW_TAIPEI","237":"NEW_TAIPEI","238":"NEW_TAIPEI","239":"NEW_TAIPEI","241":"NEW_TAIPEI","242":"NEW_TAIPEI","243":"NEW_TAIPEI","244":"NEW_TAIPEI","247":"NEW_TAIPEI","248":"NEW_TAIPEI","249":"NEW_TAIPEI","260":"YILAN","300":"HSINCHU","302":"HSINCHU","320":"TAOYUAN","330":"TAOYUAN","350":"MIAOLI","400":"TAICHUNG","500":"CHANGHUA","540":"NANTOU","600":"CHIAYI","630":"YUNLIN","700":"TAINAN","800":"KAOHSIUNG","900":"PINGTUNG","950":"TAITUNG","970":"HUALIEN"};
 const TW_DEFAULT_PC={KAOHSIUNG:"800",TAINAN:"700",CHIAYI:"600",YUNLIN:"630",CHANGHUA:"500",TAICHUNG:"400",NANTOU:"540",MIAOLI:"350",HSINCHU:"300",TAOYUAN:"330",NEW_TAIPEI:"220",TAIPEI:"100",KEELUNG:"200",YILAN:"260",HUALIEN:"970",TAITUNG:"950",PINGTUNG:"900",ISLANDS:"880"};
 // Planning rates in TWD/kg and minimum chargeable kg; conservative commercial estimates, not carrier tariffs.
@@ -834,7 +841,7 @@ document.querySelectorAll("#indonesiaShipping input, #indonesiaShipping select")
 
 const indoPostcodeInput = document.getElementById("indoPostcode");
 if (indoPostcodeInput) {
-  // V6.0: tap/focus selects the whole postcode for one-step replace/delete.
+  // V6.1: tap/focus selects the whole postcode for one-step replace/delete.
   indoPostcodeInput.addEventListener("focus", function () { this.select(); });
   indoPostcodeInput.addEventListener("click", function () { this.select(); });
   indoPostcodeInput.addEventListener("input", function () {
@@ -970,8 +977,8 @@ function isEmbeddedInPricingSuite() {
 }
 
 async function startCalculator() {
-  // Standalone V6.0 keeps its original refresh/cache behavior.
-  // Embedded in Pricing Suite V9.7: disable the child refresh handler so
+  // Standalone V6.1 keeps its original refresh/cache behavior.
+  // Embedded in Pricing Suite V10.3: disable the child refresh handler so
   // it cannot block native mobile scrolling or conflict with suite refresh.
   if (!isEmbeddedInPricingSuite()) {
     const reloading = await clearLegacyPwaCache();

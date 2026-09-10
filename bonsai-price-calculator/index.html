@@ -30,7 +30,7 @@
         <div class="title-ms">Kalkulator Harga Bonsai</div>
         <div class="company-line">
           <div class="company">Lover Legend Gardening</div>
-          <div class="version">V6.0</div>
+          <div class="version">V6.1</div>
         </div>
       </div>
 
@@ -53,7 +53,7 @@
         <div class="product-picker">
           <div class="product-label">产品编号 / Product ID</div>
           <div class="product-input-wrap">
-            <input id="productIdInput" type="text" value="" placeholder="PZ / 产品" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <input id="productIdInput" type="text" value="" placeholder="BX / 产品" autocomplete="off" autocapitalize="characters" spellcheck="false" />
             <button id="clearProductBtn" type="button" aria-label="Clear product">×</button>
           </div>
           <div id="productName" class="product-name" hidden></div>
@@ -260,10 +260,10 @@
     </section>
   </main>
 
-  <script src="script.js?v=6.0"></script>
+  <script src="script.js?v=6.1"></script>
 
 <script>
-/* Pricing Suite V10.2 embedded pull gesture bridge.
+/* Pricing Suite V10.3 embedded pull gesture bridge.
    Passive only: never blocks or replaces native scrolling. */
 (function () {
   if (window.self === window.top) return;
@@ -271,7 +271,7 @@
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v101",
+        source: "lover-legend-pull-v103",
         phase: phase,
         y: y
       }, window.location.origin);

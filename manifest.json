@@ -1,22 +1,22 @@
 {
-  "name": "Lover Legend Pricing Suite V10.2",
+  "name": "Lover Legend Pricing Suite V10.3",
   "short_name": "Cost And Sales",
-  "start_url": "./?v=10.2",
+  "start_url": "./?v=10.3",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef2ec",
   "theme_color": "#eef2ec",
   "icons": [
     {
-      "src": "./icon-192.png?v=10.2",
+      "src": "./icon-192.png?v=10.3",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./icon-512.png?v=10.2",
+      "src": "./icon-512.png?v=10.3",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "description": "Lover Legend Pricing Suite V10.2. Final minimum prices are hydrated from last successful Import V16.3 publicProductPricing cache and refreshed in parallel for near-instant display; Cost Calculator V10.2, Bonsai Calculator V6.0, mobile scrolling and pull-to-refresh preserved."
+  "description": "Lover Legend Pricing Suite V10.3. Final minimum prices are hydrated from last successful Import V16.4 publicProductPricing cache and refreshed in parallel for near-instant display; Cost Calculator V10.3, Bonsai Calculator V6.1, mobile scrolling and pull-to-refresh preserved."
 }
