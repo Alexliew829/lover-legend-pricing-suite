@@ -282,7 +282,7 @@
     }
 
   
-    /* V10.1 lightweight pull-to-refresh indicator.
+    /* V10.2 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=10.1-pull-refresh"
+          src="cost-calculator/index.html?v=10.2-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=5.9-v10.1"
+          src="bonsai-price-calculator/index.html?v=6.0-v10.2"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -759,7 +759,7 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V10.1: lightweight pull-to-refresh.
+    // V10.2: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -843,7 +843,7 @@
 
         setTimeout(() => {
           const url = new URL(window.location.href);
-          url.searchParams.set("_v", "10.1");
+          url.searchParams.set("_v", "10.2");
           url.searchParams.set("_refresh", Date.now().toString());
           window.location.replace(url.toString());
         }, 120);
@@ -874,7 +874,7 @@
       });
     })();
 
-    // V10.1: permanently remove legacy Pricing Suite service workers/caches.
+    // V10.2: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
@@ -898,7 +898,7 @@
           if (!sessionStorage.getItem(reloadKey)) {
             sessionStorage.setItem(reloadKey, "1");
             const url = new URL(window.location.href);
-            url.searchParams.set("_v", "10.1");
+            url.searchParams.set("_v", "10.2");
             url.searchParams.set("_refresh", Date.now().toString());
             window.location.replace(url.toString());
           }
