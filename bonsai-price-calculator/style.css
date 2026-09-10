@@ -786,7 +786,7 @@ color: #0B5ED7;
 }
 
 
-/* V6.1 product lookup: compact ID/product search + wider live price. */
+/* V6.3 product lookup: compact ID/product search + wider live price. */
 .product-live-row {
   align-items: stretch;
   position: relative;
@@ -912,7 +912,7 @@ color: #0B5ED7;
   .live-price-input { min-width: 0; }
 }
 
-/* V6.1: compact product picker and guarantee full live-price visibility. */
+/* V6.3: compact product picker and guarantee full live-price visibility. */
 .product-picker {
   width: 38%;
   flex: 0 0 38%;

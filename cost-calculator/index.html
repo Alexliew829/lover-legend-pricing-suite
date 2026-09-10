@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.3</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.4</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -765,7 +765,7 @@ body {
     const IMPORT_UNIT_PRICE_KEY =
       "loverLegendPricingSuiteImportUnitPrices";
 
-    // V10.3: last successful V16.4 publicProductPricing result.
+    // V10.4: last successful V16.4 publicProductPricing result.
     // Used immediately on next load while a fresh network copy is fetched.
     const PUBLIC_PRICING_CACHE_KEY =
       "loverLegendPricingSuitePublicPricingV101";
@@ -1048,7 +1048,7 @@ body {
         if (seen.has(key)) return;
         seen.add(key);
 
-        // V10.3: Import System V4.4 endpoint + importNumber primary relationship key.
+        // V10.4: Import System V4.4 endpoint + importNumber primary relationship key.
         // Product name is used only to locate the matching item inside that batch.
         const { batch, matchedItem } =
           resolveImportMapping(importNumber, productName);
@@ -1141,7 +1141,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V10.3: effective minimumPrice is supplied only by
+          // V10.4: effective minimumPrice is supplied only by
           // Import V16.4 publicProductPricing after cloud refresh.
           minimumPrice: 0,
           mappingStatus: batch ? "BATCH_MATCHED" : "BATCH_MISSING",
@@ -1230,7 +1230,7 @@ body {
         return 0;
       }
 
-      // V10.3: enrich immediately from the last successful API cache.
+      // V10.4: enrich immediately from the last successful API cache.
       // This makes minimumPrice/Product ID available before network finishes.
       if (publicProductPricingV101.length) {
         records = applyPublicPricingV101(
@@ -1269,16 +1269,16 @@ body {
       return normalizeImportProductSearchText(value);
     }
 
-    const PRODUCT_PREFIX_RULES_V103 = [["黄杨","BX"],["凌珊","BB"],["罗汉松","PD"],["李氏樱桃","SK"],["水梅","JL"],["酸豆","AS"],["寿娘子","SC"],["三角梅","BV"],["七里香","MR"],["九里香","MR"],["仙丹","IX"],["福建茶","HK"]];
-    const LEGACY_PRODUCT_ID_ALIASES_V103 = Object.freeze({ PS0001:"BX0001", PS0002:"AS0002", PZ0006:"BX0006" });
-    function compatiblePricingIdsV103(item) {
+    const PRODUCT_PREFIX_RULES_V104 = [["黄杨","BX"],["凌珊","BB"],["罗汉松","PD"],["李氏樱桃","SK"],["水梅","JL"],["酸豆","AS"],["寿娘子","SC"],["三角梅","BV"],["七里香","MR"],["九里香","MR"],["仙丹","IX"],["福建茶","HK"]];
+    const LEGACY_PRODUCT_ID_ALIASES_V104 = Object.freeze({ PS0001:"BX0001", PS0002:"AS0002", PZ0006:"BX0006" });
+    function compatiblePricingIdsV104(item) {
       const current = normalizePublicPricingIdV101(item?.id);
       const suffix = current.match(/^[A-Z]{2}(\d{4})$/)?.[1];
       if (!suffix) return [current];
       if (current.startsWith("PS")) return [current];
       const name = String(item?.name || "").replace(/\s+/g, "");
-      const rule = PRODUCT_PREFIX_RULES_V103.find(([keyword]) => name.includes(keyword));
-      const knownLegacy = Object.keys(LEGACY_PRODUCT_ID_ALIASES_V103).filter(oldId => LEGACY_PRODUCT_ID_ALIASES_V103[oldId] === current);
+      const rule = PRODUCT_PREFIX_RULES_V104.find(([keyword]) => name.includes(keyword));
+      const knownLegacy = Object.keys(LEGACY_PRODUCT_ID_ALIASES_V104).filter(oldId => LEGACY_PRODUCT_ID_ALIASES_V104[oldId] === current);
       return [...new Set([current, `PZ${suffix}`, rule ? `${rule[1]}${suffix}` : "", ...knownLegacy].filter(Boolean))];
     }
 
@@ -1300,7 +1300,7 @@ body {
           name: String(item?.name || "").trim(),
           normalizedName: normalizePublicPricingNameV101(item?.name),
           minimumPrice: Math.max(0, Number(item?.minimumPrice) || 0),
-          compatibleIds: compatiblePricingIdsV103(item)
+          compatibleIds: compatiblePricingIdsV104(item)
         })).filter(item => item.normalizedId);
 
         return publicProductPricingV101.length;
@@ -1330,7 +1330,7 @@ body {
     async function fetchPublicProductPricingV101() {
       let lastError = null;
 
-      // Same retry principle as the standalone V6.1, which is proven to work
+      // Same retry principle as the standalone V6.3, which is proven to work
       // against this exact Import V16.4 publicProductPricing endpoint.
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
@@ -1357,7 +1357,7 @@ body {
             name: String(item?.name || "").trim(),
             normalizedName: normalizePublicPricingNameV101(item?.name),
             minimumPrice: Math.max(0, Number(item?.minimumPrice) || 0),
-            compatibleIds: compatiblePricingIdsV103(item)
+            compatibleIds: compatiblePricingIdsV104(item)
           })).filter(item => item.normalizedId);
 
           savePublicPricingCacheV101(publicProductPricingV101);
@@ -1494,7 +1494,7 @@ body {
 
         return {
           ...record,
-          // Critical V10.3 fix: backfill the real Product ID from V16.4 API.
+          // Critical V10.4 fix: backfill the real Product ID from V16.4 API.
           // This makes BX580 / 580 / 12000 / PZ0034 searchable even when
           // the old import row itself did not store productId.
           productId: publicItem.id,
@@ -1512,7 +1512,7 @@ body {
       const status = document.getElementById("importProductStatus");
 
       try {
-        // V10.3: start final minimum-price API immediately and in parallel
+        // V10.4: start final minimum-price API immediately and in parallel
         // with the much larger Import full-data pull.
         const publicPricingPromise =
           prefetchPublicProductPricingV101();
@@ -1556,8 +1556,8 @@ body {
 
         let records = buildCloudImportProductRecords(data);
 
-        // V10.3: use the SAME publicProductPricing source that standalone
-        // V6.1 uses successfully. It supplies both the final minimumPrice
+        // V10.4: use the SAME publicProductPricing source that standalone
+        // V6.3 uses successfully. It supplies both the final minimumPrice
         // and the authoritative Product ID.
         const publicPricingProducts =
           await publicPricingPromise;
@@ -1649,7 +1649,7 @@ body {
 
       actualPriceInput.value = safeMinimumPrice.toFixed(2);
 
-      // V10.3 Final:
+      // V10.4 Final:
       // This update can happen after the first Calculate because cloud sync
       // finishes asynchronously. Never clear the calculation result here.
       // Otherwise the first result disappears before the user can read it.
@@ -1678,9 +1678,9 @@ body {
 
       actualPriceManuallyEdited = false;
 
-      // V10.3 FIX:
+      // V10.4 FIX:
       // Once cloud/API pricing is ready, NEVER rebuild the selected record
-      // from raw Import localStorage. That was the V10.3 bug that changed
+      // from raw Import localStorage. That was the V10.4 bug that changed
       // effective minimumPrice back to 0.00.
       if (importProductsCloudReady) {
         const publicItem = findPublicPricingForRecordV101(record);
@@ -1809,7 +1809,7 @@ body {
 
       if (!query) return true;
 
-      // V10.3：型号支持“从左到右”的即时前缀搜索。
+      // V10.4：型号支持“从左到右”的即时前缀搜索。
       // 例如：
       // BX5   -> BX500 / BX520 / BX580...
       // BX58  -> BX580...
@@ -1971,7 +1971,7 @@ body {
 
       importProductRecords = readImportUnitPriceRecords();
       visibleImportProductRecords = importProductRecords.filter(record => {
-        // V10.3: same Product ID search behavior as standalone V6.1.
+        // V10.4: same Product ID search behavior as standalone V6.3.
         // Examples: BX580, 580, 12000, PZ0034.
         const normalized =
           normalizePublicPricingIdV101(keyword);
@@ -2145,7 +2145,7 @@ body {
 
       clearCalculationResult(true);
 
-      // V10.3: minimumPrice is only the initial value for actualPrice.
+      // V10.4: minimumPrice is only the initial value for actualPrice.
       // The user can edit actualPrice freely afterward.
       // This is intentionally one-way: there is no write-back to Import System.
       if (actualPriceInput) {
@@ -2597,7 +2597,7 @@ window.onload = () => {
   autoSetPotVND();
   autoDetectCurrency();
 
-  // V10.3 FAST START:
+  // V10.4 FAST START:
   // 1) use last successful final minimum prices immediately;
   // 2) refresh publicProductPricing immediately in background;
   // 3) pull the larger Import dataset in parallel shortly afterward.
@@ -2772,7 +2772,7 @@ window.onload = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
-      // V10.3 Final:
+      // V10.4 Final:
       // User changes to cost data invalidate the old calculation result,
       // so hide/clear the old result, but preserve actualPrice/minimumPrice.
       const clearOldQuote = () => clearCalculationResult(false);
@@ -2804,7 +2804,7 @@ window.onload = () => {
     }
   };
 
-  // V10.3: only one background cloud sync per page load.
+  // V10.4: only one background cloud sync per page load.
   // Focus/pageshow/visibility changes only rerender local memory/cache.
   window.addEventListener("pageshow", () => {
     document.getElementById("mobileProductBackdrop")?.remove();
@@ -2835,7 +2835,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V10.3 embedded pull gesture bridge.
+/* Pricing Suite V10.4 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;
@@ -2843,7 +2843,7 @@ window.onload = () => {
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v103",
+        source: "lover-legend-pull-v104",
         phase: phase,
         y: y
       }, window.location.origin);

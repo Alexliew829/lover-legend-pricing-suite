@@ -9,8 +9,8 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>Kalkulator Harga Bonsai | 盆景价格计算器</title>
-  <link rel="stylesheet" href="style.css?v=5.3" />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css?v=6.3" />
+  <link rel="manifest" href="manifest.json?v=6.3" />
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
 
   <meta name="theme-color" content="#1E5631" />
@@ -30,7 +30,7 @@
         <div class="title-ms">Kalkulator Harga Bonsai</div>
         <div class="company-line">
           <div class="company">Lover Legend Gardening</div>
-          <div class="version">V6.1</div>
+          <div class="version">V6.3</div>
         </div>
       </div>
 
@@ -260,18 +260,19 @@
     </section>
   </main>
 
-  <script src="script.js?v=6.1"></script>
+  <script src="script.js?v=6.3"></script>
 
 <script>
-/* Pricing Suite V10.3 embedded pull gesture bridge.
-   Passive only: never blocks or replaces native scrolling. */
+/* Pricing Suite V10.4 integration bridge only.
+   The embedded calculator remains V6.3; this forwards passive pull gestures
+   to the V10.4 parent so mobile pull-to-refresh is handled once. */
 (function () {
   if (window.self === window.top) return;
 
   function send(phase, y) {
     try {
       window.parent.postMessage({
-        source: "lover-legend-pull-v103",
+        source: "lover-legend-pull-v104",
         phase: phase,
         y: y
       }, window.location.origin);

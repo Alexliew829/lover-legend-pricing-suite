@@ -8,9 +8,9 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#eef2ec" />
   <title>Lover Legend Pricing Suite</title>
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=10.3" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10.3" />
-  <link rel="manifest" href="./manifest.json?v=10.3" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=10.4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10.4" />
+  <link rel="manifest" href="./manifest.json?v=10.4" />
 
   <style>
     * { box-sizing: border-box; }
@@ -282,7 +282,7 @@
     }
 
   
-    /* V10.3 lightweight pull-to-refresh indicator.
+    /* V10.4 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=10.3-pull-refresh"
+          src="cost-calculator/index.html?v=10.4-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=6.1-v10.3"
+          src="bonsai-price-calculator/index.html?v=6.3-v10.4"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -759,7 +759,7 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V10.3: lightweight pull-to-refresh.
+    // V10.4: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -837,13 +837,23 @@
         }
 
         refreshing = true;
+        try {
+          const now = Date.now();
+          const previous = Number(sessionStorage.getItem("loverLegendSuiteRefreshAtV104") || 0);
+          if (now - previous < 1500) {
+            resetIndicator();
+            refreshing = false;
+            return;
+          }
+          sessionStorage.setItem("loverLegendSuiteRefreshAtV104", String(now));
+        } catch (error) {}
         indicator.textContent = "刷新中... / Refreshing...";
         indicator.classList.add("show", "ready");
         indicator.style.transform = "translate(-50%, -8px)";
 
         setTimeout(() => {
           const url = new URL(window.location.href);
-          url.searchParams.set("_v", "10.3");
+          url.searchParams.set("_v", "10.4");
           url.searchParams.set("_refresh", Date.now().toString());
           window.location.replace(url.toString());
         }, 120);
@@ -865,7 +875,7 @@
       window.addEventListener("message", (event) => {
         if (event.origin !== window.location.origin) return;
         const data = event.data;
-        if (!data || data.source !== "lover-legend-pull-v103") return;
+        if (!data || data.source !== "lover-legend-pull-v104") return;
 
         if (data.phase === "start") begin(Number(data.y) || 0);
         else if (data.phase === "move") move(Number(data.y) || 0);
@@ -874,7 +884,7 @@
       });
     })();
 
-    // V10.3: permanently remove legacy Pricing Suite service workers/caches.
+    // V10.4: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
@@ -894,11 +904,11 @@
 
       if (hadController) {
         try {
-          const reloadKey = "loverLegendPricingSuiteCleanupV103";
+          const reloadKey = "loverLegendPricingSuiteCleanupV104";
           if (!sessionStorage.getItem(reloadKey)) {
             sessionStorage.setItem(reloadKey, "1");
             const url = new URL(window.location.href);
-            url.searchParams.set("_v", "10.3");
+            url.searchParams.set("_v", "10.4");
             url.searchParams.set("_refresh", Date.now().toString());
             window.location.replace(url.toString());
           }
