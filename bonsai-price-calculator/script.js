@@ -1049,7 +1049,7 @@ function isEmbeddedInPricingSuiteV104() {
 }
 
 async function startCalculator() {
-  // V10.4 integration only: V6.3 keeps all pricing/search/layout logic unchanged.
+  // V10.5 integration only: V6.3 keeps all pricing/search/layout logic unchanged.
   // When embedded, the parent owns pull-to-refresh so one gesture refreshes only once.
   if (!isEmbeddedInPricingSuiteV104()) {
     const reloading = await clearLegacyPwaCache();
