@@ -999,7 +999,7 @@ async function clearLegacyPwaCache() {
 }
 
 function enablePullToRefresh() {
-  // V10.6 integration: parent suite is the only refresh controller when embedded.
+  // V10.7 integration: parent suite is the only refresh controller when embedded.
   if (window.self !== window.top) {
     if (pullRefreshEl) pullRefreshEl.style.display = "none";
     return;

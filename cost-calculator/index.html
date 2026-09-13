@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.6</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.7</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -2159,6 +2159,22 @@ body {
       autoSetPotVND();
       closeImportProductOptions();
 
+      // V10.7: one-way product identity sync to the embedded bonsai calculator.
+      // Only Product ID + Product Name are shared. Cost/minimum/live prices are NOT
+      // pushed across, so V6.8 remains the sole authority for its own pricing.
+      try {
+        const syncProductId = String(record.productId || "").trim();
+        const syncProductName = String(record.productName || "").trim();
+        if (syncProductId && window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            source: "lover-legend-cost-v107",
+            type: "selected-import-product",
+            productId: syncProductId,
+            productName: syncProductName
+          }, window.location.origin);
+        }
+      } catch (error) {}
+
       const status = document.getElementById("importProductStatus");
       if (status) {
         status.classList.remove("error");
@@ -2850,7 +2866,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V10.6 embedded pull gesture bridge.
+/* Pricing Suite V10.7 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;

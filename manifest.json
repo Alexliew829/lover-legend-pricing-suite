@@ -1,5 +1,5 @@
 {
-  "name": "Lover Legend Pricing Suite V10.6",
+  "name": "Lover Legend Pricing Suite V10.7",
   "short_name": "Cost And Sales",
   "start_url": "./?v=10.6",
   "scope": "./",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "description": "Lover Legend Pricing Suite V10.6. Final minimum prices are hydrated from last successful Import V16.4 publicProductPricing cache and refreshed in parallel for near-instant display; Cost Calculator V10.6, Bonsai Calculator V6.8, mobile scrolling and pull-to-refresh preserved."
+  "description": "Lover Legend Pricing Suite V10.7. Final minimum prices are hydrated from last successful Import V16.4 publicProductPricing cache and refreshed in parallel for near-instant display; Cost Calculator V10.7, Bonsai Calculator V6.8, mobile scrolling and pull-to-refresh preserved."
 }

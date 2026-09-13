@@ -1,0 +1,8 @@
+V10.7
+- Embedded Bonsai Calculator: V6.8 (unchanged logic)
+- One-way product sync: Cost Calculator -> Bonsai V6.8
+- Syncs Product ID + Product Name identity only
+- V6.8 independently reads effective minimum price and calculates retail/live price
+- Right-side product changes never write back to left
+- Fair-price auto-sync is suppressed while a left Import product is linked, preventing price conflicts
+- Mobile scrolling remains native/passive; one outer pull-to-refresh controller only

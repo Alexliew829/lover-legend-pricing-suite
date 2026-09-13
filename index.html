@@ -282,7 +282,7 @@
     }
 
   
-    /* V10.6 lightweight pull-to-refresh indicator.
+    /* V10.7 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=10.6-pull-refresh"
+          src="cost-calculator/index.html?v=10.7-pull-refresh"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=6.8-v10.6"
+          src="bonsai-price-calculator/index.html?v=6.8-v10.7"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -628,6 +628,8 @@
 
     let pendingFairPrice = null;
     let fairPriceObserver = null;
+    let linkedImportProductId = "";
+    let pendingLinkedProduct = null;
 
     function extractFairPriceFromCostCalculator() {
       try {
@@ -675,6 +677,10 @@
     }
 
     function syncFairPriceToBonsaiCalculator() {
+      // V10.7: when a real Import product is selected on the left, V6.8 must
+      // calculate retail/live/minimum from that product's own effective minimum.
+      // Do not overwrite it with the left calculator's Fair price.
+      if (linkedImportProductId) return;
       const fairPrice = extractFairPriceFromCostCalculator();
       if (!Number.isFinite(fairPrice)) return;
 
@@ -682,6 +688,38 @@
 
       if (applyFairPriceToBonsaiCalculator(fairPrice)) {
         pendingFairPrice = null;
+      }
+    }
+
+    function applyLinkedProductToBonsaiCalculator(payload) {
+      if (!payload || !payload.productId) return false;
+      try {
+        const priceFrame = document.getElementById("priceFrame");
+        const priceWin = priceFrame && priceFrame.contentWindow;
+        const priceDoc = priceFrame && (priceFrame.contentDocument || priceWin.document);
+        const idInput = priceDoc && priceDoc.getElementById("productIdInput");
+        if (!idInput) return false;
+
+        idInput.value = String(payload.productId || "").trim();
+        idInput.dispatchEvent(new Event("input", { bubbles: true }));
+        // V6.8 resolves the official current ID, name and effective minimum itself.
+        // Nothing is written back to the left calculator.
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function queueLinkedProduct(payload) {
+      if (!payload || !payload.productId) return;
+      linkedImportProductId = String(payload.productId).trim().toUpperCase();
+      pendingLinkedProduct = {
+        productId: String(payload.productId || "").trim(),
+        productName: String(payload.productName || "").trim()
+      };
+      pendingFairPrice = null;
+      if (applyLinkedProductToBonsaiCalculator(pendingLinkedProduct)) {
+        pendingLinkedProduct = null;
       }
     }
 
@@ -729,8 +767,15 @@
           watchFairPriceResult();
         }
 
+        if (frame.id === "priceFrame" && pendingLinkedProduct) {
+          if (applyLinkedProductToBonsaiCalculator(pendingLinkedProduct)) {
+            pendingLinkedProduct = null;
+          }
+        }
+
         if (
           frame.id === "priceFrame" &&
+          !linkedImportProductId &&
           Number.isFinite(pendingFairPrice)
         ) {
           if (applyFairPriceToBonsaiCalculator(pendingFairPrice)) {
@@ -759,7 +804,16 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V10.6: lightweight pull-to-refresh.
+    // V10.7: left -> right product identity sync only.
+    // Right-side product changes never write back to the cost calculator.
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.source !== "lover-legend-cost-v107") return;
+      if (data.type === "selected-import-product") queueLinkedProduct(data);
+    });
+
+    // V10.7: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -884,7 +938,7 @@
       });
     })();
 
-    // V10.6: permanently remove legacy Pricing Suite service workers/caches.
+    // V10.7: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
