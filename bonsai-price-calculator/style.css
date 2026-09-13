@@ -786,7 +786,7 @@ color: #0B5ED7;
 }
 
 
-/* V6.3 product lookup: compact ID/product search + wider live price. */
+/* V6.8 product lookup: compact ID/product search + wider live price. */
 .product-live-row {
   align-items: stretch;
   position: relative;
@@ -912,7 +912,7 @@ color: #0B5ED7;
   .live-price-input { min-width: 0; }
 }
 
-/* V6.3: compact product picker and guarantee full live-price visibility. */
+/* V6.8: compact product picker and guarantee full live-price visibility. */
 .product-picker {
   width: 38%;
   flex: 0 0 38%;
@@ -945,4 +945,278 @@ color: #0B5ED7;
   #clearProductBtn { width: 25px; font-size: 18px; }
   .product-name { font-size: 9px; }
   .live-rm-prefix, .live-price-input { font-size: 23px; }
+}
+
+
+/* V6.8 layout only: wider product area, one-line Live label, no RM prefix. */
+.product-live-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.product-picker {
+  width: 60%;
+  flex: 0 0 60%;
+  min-width: 0;
+  padding-right: 8px;
+  border-right: 1px solid #d8dfd4;
+}
+.live-panel {
+  width: 40%;
+  flex: 0 0 40%;
+  min-width: 0;
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  overflow: visible;
+}
+.live-label {
+  display: block;
+  width: 100%;
+  margin: 0 0 4px;
+  color: #b51f1f;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: right;
+  white-space: nowrap;
+}
+.live-input-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  overflow: visible;
+}
+.live-rm-prefix { display: none !important; }
+.live-price-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #c51f26;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: right;
+}
+.product-input-wrap { width: 100%; }
+.product-name {
+  margin-top: 4px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 10px;
+  line-height: 1.15;
+}
+@media (max-width: 430px) {
+  .product-picker { width: 61%; flex-basis: 61%; padding-right: 6px; }
+  .live-panel { width: 39%; flex-basis: 39%; padding-left: 6px; }
+  .product-label { font-size: 11px; }
+  #productIdInput { font-size: 15px; padding-left: 6px; padding-right: 4px; }
+  #clearProductBtn { width: 27px; font-size: 18px; }
+  .product-name { font-size: 9px; }
+  .live-label { font-size: 10.5px; letter-spacing: -0.15px; }
+  .live-price-input { font-size: 21px; }
+}
+
+
+/* V6.8 layout only: full-width Product ID row with two boxes; Live label moved above the lower price. */
+.product-only-row {
+  display: block;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.product-picker-full {
+  width: 100% !important;
+  max-width: none !important;
+  flex: 1 1 100% !important;
+  padding-right: 0 !important;
+  border-right: 0 !important;
+}
+.product-picker-full .product-label {
+  width: 100%;
+  display: block;
+  margin: 0 0 5px;
+  font-size: 13px;
+  line-height: 1.05;
+  font-weight: 900;
+  color: #145f34;
+  white-space: nowrap;
+}
+.product-two-boxes {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(105px, 31%) minmax(0, 69%);
+  gap: 7px;
+  align-items: stretch;
+}
+.product-id-box {
+  min-width: 0;
+  margin: 0;
+}
+.product-name-box {
+  min-width: 0;
+  min-height: 38px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #b9cbbd;
+  border-radius: 7px;
+  background: #fff;
+  color: #15291b;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+}
+.product-name-box[hidden] {
+  display: flex !important;
+  color: #8b938d;
+}
+.product-name-box[hidden]::before {
+  content: "产品名称 / Product Name";
+  font-size: 12px;
+  font-weight: 700;
+}
+.product-picker-full .product-dropdown {
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.live-below-panel {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+.live-below-label {
+  width: 100%;
+  margin: 0 0 2px;
+  color: #b51f1f;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: right;
+  white-space: nowrap;
+}
+.live-below-panel .live-input-wrap {
+  width: 100%;
+}
+.live-below-panel .live-price-input,
+.live-below-panel #foreignPrice {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #176438;
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: right;
+  white-space: nowrap;
+}
+.live-below-panel #foreignPrice { display: block; }
+.live-below-panel #foreignPrice[hidden] { display: none !important; }
+.live-below-panel .live-price-input[hidden] { display: none !important; }
+@media (max-width: 430px) {
+  .product-two-boxes { grid-template-columns: minmax(95px, 30%) minmax(0, 70%); gap: 6px; }
+  .product-picker-full .product-label { font-size: 12px; }
+  .product-name-box { min-height: 38px; padding: 6px 7px; font-size: 14px; line-height: 1.15; }
+  #productIdInput { font-size: 16px; }
+  .live-below-label { font-size: 11px; }
+  .live-below-panel .live-price-input,
+  .live-below-panel #foreignPrice { font-size: 23px; }
+}
+
+/* V6.8: searchable product-name box; ID box reserves comfortable space for 7 characters. */
+.product-two-boxes {
+  grid-template-columns: minmax(118px, 34%) minmax(0, 66%);
+}
+.product-name-box {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.15;
+  cursor: text;
+}
+.product-name-box::placeholder {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8b938d;
+}
+@media (max-width: 430px) {
+  .product-two-boxes { grid-template-columns: minmax(112px, 34%) minmax(0, 66%); gap: 6px; }
+  #productIdInput { font-size: 16px; }
+  .product-name-box { font-size: 16px; padding: 6px 8px; }
+}
+
+/* V6.8 UI alignment: Product ID and Product Name boxes share the exact same visual height. */
+.product-two-boxes {
+  align-items: stretch;
+}
+.product-id-box,
+.product-name-box {
+  height: 40px;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid #9fb8a2;
+  border-radius: 8px;
+  background: #fff;
+  margin: 0;
+}
+.product-id-box {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.product-name-box {
+  display: block;
+  padding: 0 9px;
+  line-height: 38px;
+  vertical-align: middle;
+}
+#productIdInput {
+  height: 38px;
+  line-height: 38px;
+  box-sizing: border-box;
+}
+#clearProductBtn {
+  height: 38px;
+  min-height: 38px;
+}
+@media (max-width: 430px) {
+  .product-id-box,
+  .product-name-box {
+    height: 40px;
+    min-height: 40px;
+  }
+  .product-name-box {
+    padding: 0 8px;
+    line-height: 38px;
+  }
+  #productIdInput,
+  #clearProductBtn {
+    height: 38px;
+    min-height: 38px;
+  }
 }
