@@ -436,7 +436,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.7</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.8</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1141,6 +1141,9 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
+          // V10.8: keep Import's original minimum price separately. The public
+          // pricing bridge may replace minimumPrice with an active promotion price.
+          originalMinimumPrice: parseCloudNumber(product?.minimumPrice ?? 0),
           // V10.5: effective minimumPrice is supplied only by
           // Import V16.4 publicProductPricing after cloud refresh.
           minimumPrice: 0,
@@ -1220,6 +1223,13 @@ body {
         return 0;
       }
 
+      try {
+        const localSettings = JSON.parse(localStorage.getItem("importSystemSettings") || "null");
+        if (localSettings && typeof localSettings === "object") {
+          syncImportPricingSettingsV108(localSettings);
+        }
+      } catch (error) {}
+
       let records = buildCloudImportProductRecords({
         products,
         imports,
@@ -1258,7 +1268,62 @@ body {
     let importProductsRefreshPromise = null;
     let importProductsCloudReady = false;
     let activeImportProductKey = "";
+    let activeImportProductRecordV108 = null;
     let actualPriceManuallyEdited = false;
+
+    // V10.8: Import System V20.6 is the single authority for product cost and
+    // selling-cost rules. Existing Import products use Products.averageCost
+    // directly; VND display-pot cost, commission and local-delivery tiers are
+    // applied separately exactly like Import V20.6.
+    const DEFAULT_IMPORT_PRICING_RULES_V108 = Object.freeze({
+      commissionRate: 10,
+      freightTierA: 20, freightTierB: 50, freightTierC: 80,
+      freightTierD: 120, freightTierE: 150, freightTierF: 180,
+      vndPotUnder1m: 35, vndPot1mTo4m: 55,
+      vndPot4mTo10m: 105, vndPot10mPlus: 180
+    });
+    let importPricingRulesV108 = { ...DEFAULT_IMPORT_PRICING_RULES_V108 };
+    let importPromotionV108 = null;
+
+    function syncImportPricingSettingsV108(settings) {
+      const configured = settings?.minimumPriceRules &&
+        typeof settings.minimumPriceRules === "object"
+          ? settings.minimumPriceRules
+          : {};
+      const next = { ...DEFAULT_IMPORT_PRICING_RULES_V108 };
+      Object.keys(next).forEach(key => {
+        let raw = configured[key];
+        if (raw == null && key === "vndPot4mTo10m") raw = configured.vndPot4mPlus;
+        const value = Number(raw);
+        if (Number.isFinite(value) && value >= 0) next[key] = value;
+      });
+      importPricingRulesV108 = next;
+
+      const promo = settings?.promotionV183;
+      importPromotionV108 = promo && promo.active === true
+        ? {
+            active: true,
+            commissionRate: Number.isFinite(Number(promo.commissionRate))
+              ? Number(promo.commissionRate) : next.commissionRate,
+            targetMarginRate: Number.isFinite(Number(promo.targetMarginRate))
+              ? Number(promo.targetMarginRate) : 10,
+            excludedProductIds: Array.from(new Set(
+              (Array.isArray(promo.excludedProductIds) ? promo.excludedProductIds : [])
+                .map(id => String(id || "").trim().toUpperCase())
+                .filter(Boolean)
+            ))
+          }
+        : null;
+    }
+
+    function getVndPotCostV108(currency, unitPrice) {
+      if (String(currency || "").toUpperCase() !== "VND") return 0;
+      const price = Math.max(0, Number(unitPrice) || 0);
+      if (price >= 10000000) return importPricingRulesV108.vndPot10mPlus;
+      if (price >= 4000000) return importPricingRulesV108.vndPot4mTo10m;
+      if (price >= 1000000) return importPricingRulesV108.vndPot1mTo4m;
+      return importPricingRulesV108.vndPotUnder1m;
+    }
 
 
     function normalizePublicPricingIdV101(value) {
@@ -1554,6 +1619,10 @@ body {
           throw new Error(data?.error || "云端资料不完整");
         }
 
+        // V10.8: use the same configurable commission / freight / VND-pot
+        // settings that Import V20.6 itself currently uses.
+        syncImportPricingSettingsV108(data.settings || {});
+
         let records = buildCloudImportProductRecords(data);
 
         // V10.5: use the SAME publicProductPricing source that standalone
@@ -1669,7 +1738,8 @@ body {
           `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
           ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        status.innerHTML = `${line1}<br>${line2}`;
+        const line3 = `V10.8：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
+        status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
 
@@ -2141,7 +2211,14 @@ body {
           ).toFixed(2)}%`;
       }
 
-      if (localInput) localInput.value = defaultLocal[currency] ?? 0;
+      // V10.8: an existing Import product must not add the legacy fixed local
+      // cost again. Import averageCost already contains import-side inland /
+      // overseas costs; selling-side wood-rack + local delivery is deducted later.
+      if (localInput) localInput.value = 0;
+      const mossInput = document.getElementById("moss");
+      if (mossInput) mossInput.value = 0;
+
+      activeImportProductRecordV108 = { ...record };
 
       clearCalculationResult(true);
 
@@ -2159,7 +2236,7 @@ body {
       autoSetPotVND();
       closeImportProductOptions();
 
-      // V10.7: one-way product identity sync to the embedded bonsai calculator.
+      // V10.8: one-way product identity sync to the embedded bonsai calculator.
       // Only Product ID + Product Name are shared. Cost/minimum/live prices are NOT
       // pushed across, so V6.8 remains the sole authority for its own pricing.
       try {
@@ -2167,7 +2244,7 @@ body {
         const syncProductName = String(record.productName || "").trim();
         if (syncProductId && window.parent && window.parent !== window) {
           window.parent.postMessage({
-            source: "lover-legend-cost-v107",
+            source: "lover-legend-cost-v108",
             type: "selected-import-product",
             productId: syncProductId,
             productName: syncProductName
@@ -2188,7 +2265,8 @@ body {
           `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        status.innerHTML = `${line1}<br>${line2}`;
+        const line3 = `V10.8：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
+        status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
 
@@ -2280,16 +2358,9 @@ body {
 
       const price = parseFloat(document.getElementById('price').value) || 0;
 
-      // V10.5: keep VND pot-cost tiers identical to Import System V20.6.
-      if (price >= 10000000) {
-        potInput.value = "180";
-      } else if (price >= 4000000) {
-        potInput.value = "105";
-      } else if (price >= 1000000) {
-        potInput.value = "55";
-      } else {
-        potInput.value = "35";
-      }
+      // V10.8: use the CURRENT Import V20.6 VND-pot settings, including
+      // customized values, instead of a separate hard-coded calculator copy.
+      potInput.value = String(getVndPotCostV108(currency, price));
     }
 
     function setRate() {
@@ -2322,6 +2393,10 @@ function clearCalculationResult(resetActualPrice = false) {
 }
 
 function updateRawPrice() {
+  // Manual source-price editing means this is now a manual/new-product estimate,
+  // not an authoritative existing Import-product calculation.
+  activeImportProductRecordV108 = null;
+  activeImportProductKey = "";
   const input = document.getElementById('price_display');
   const raw = parseFloat(
     input.value.replace(/,/g, '').replace(/[^\d.]/g, '')
@@ -2393,12 +2468,37 @@ function formatActualPrice() {
     // This is separate from the editable "本地运费（钉木架80）" cost field above.
     function getImportSystemDeliveryCost(sellingPrice) {
       const p = Number(sellingPrice) || 0;
-      if (p < 300) return 20;
-      if (p <= 500) return 50;
-      if (p <= 1000) return 80;
-      if (p <= 2000) return 120;
-      if (p < 5000) return 150;
-      return 180;
+      const r = importPricingRulesV108;
+      if (p < 300) return r.freightTierA;
+      if (p <= 500) return r.freightTierB;
+      if (p <= 1000) return r.freightTierC;
+      if (p <= 2000) return r.freightTierD;
+      if (p < 5000) return r.freightTierE;
+      return r.freightTierF;
+    }
+
+    function getImportSaleTermsV108(record, sellingPrice) {
+      const id = String(record?.productId || "").trim().toUpperCase();
+      const promotionApplies = Boolean(
+        importPromotionV108?.active &&
+        !importPromotionV108.excludedProductIds.includes(id)
+      );
+      const commissionRate = promotionApplies
+        ? importPromotionV108.commissionRate
+        : importPricingRulesV108.commissionRate;
+
+      // Import V20.6 promotion rule: freight remains locked to the ORIGINAL
+      // minimum-price tier even when the promotion minimum price is lower.
+      const originalMinimum = Math.max(0, Number(record?.originalMinimumPrice) || 0);
+      const deliveryBasePrice = promotionApplies && originalMinimum > 0
+        ? originalMinimum
+        : sellingPrice;
+
+      return {
+        promotionApplies,
+        commissionRate,
+        deliveryCost: getImportSystemDeliveryCost(deliveryBasePrice)
+      };
     }
 
     function calculate() {
@@ -2432,22 +2532,48 @@ function formatActualPrice() {
         : freightInput.includes('%')
           ? (parseFloat(freightInput.replace('%', '')) / 100)
           : (parseFloat(freightInput) / 100);
-const rmCost =
+const manualRmCost =
   (price * (1 + inlandMisc) / rate) * (1 + freight) +
   pot +
   moss +
   local;
 
+// V10.8 authoritative Import-product mode:
+// Existing products use Products.averageCost exactly. VND display-pot cost is
+// NOT inside averageCost in Import V20.6, so it is added once here. Legacy
+// calculator inland/freight/moss/local inputs are not layered on top again.
+const authoritativeAverageCost = Math.max(
+  0,
+  Number(activeImportProductRecordV108?.averageCostRM) || 0
+);
+const authoritativePotCost = authoritativeAverageCost > 0
+  ? getVndPotCostV108(
+      activeImportProductRecordV108?.currency,
+      activeImportProductRecordV108?.unitPrice
+    )
+  : 0;
+const usingImportAuthorityV108 = authoritativeAverageCost > 0;
+const rmCost = usingImportAuthorityV108
+  ? authoritativeAverageCost + authoritativePotCost
+  : manualRmCost;
+
 let receivedAmount = 0;
 
 if (actualPrice > 0) {
-  // V10.5: follow Import System local-delivery tiers.
-  const deliveryCost = getImportSystemDeliveryCost(actualPrice);
+  const saleTermsV108 = usingImportAuthorityV108
+    ? getImportSaleTermsV108(activeImportProductRecordV108, actualPrice)
+    : {
+        promotionApplies: false,
+        commissionRate: importPricingRulesV108.commissionRate,
+        deliveryCost: getImportSystemDeliveryCost(actualPrice)
+      };
+  const deliveryCost = saleTermsV108.deliveryCost;
+  const commissionRateV108 = saleTermsV108.commissionRate;
 
-  // 到手金额 = 实际售价 - 10%佣金 - 运费
-  receivedAmount = actualPrice * 0.9 - deliveryCost;
+  // Same as Import V20.6 / Sales: 售价 - 主播佣金 - 木架+本地运费.
+  receivedAmount = actualPrice * (1 - commissionRateV108 / 100) - deliveryCost;
 
-  // 实际净利 = 到手金额 - 实际成本
+  // 实际净利 = 到手金额 - (Import平均成本 + VND花盆成本)
   const actualNetProfit = receivedAmount - rmCost;
 
   // 利润率 = 实际净利 ÷ 实际售价 × 100%
@@ -2472,8 +2598,11 @@ if (actualPrice > 0) {
       };
 
      const costX3 = rmCost * 3;
+      const costLabelV108 = usingImportAuthorityV108
+        ? `Import成本：RM ${authoritativeAverageCost.toFixed(2)}${authoritativePotCost > 0 ? ` + 花盆 RM ${authoritativePotCost.toFixed(2)}` : ""}`
+        : `实际成本：RM ${rmCost.toFixed(2)}`;
       let html = `<div class="entry" style="font-size:20px;">
-  <strong>实际成本：</strong>RM ${rmCost.toFixed(2)}
+  <strong>${costLabelV108}</strong>
   <span style="color:#8B0000; font-weight:bold;">
     &nbsp;&nbsp;x3: RM ${costX3.toFixed(2)}
   </span>
@@ -2495,11 +2624,12 @@ const retail50 =
 
 const streamerPrice = retail50;
 
-// 扣 10% 佣金
-const afterCommission = streamerPrice * 0.9;
-
-// V10.5: follow Import System local-delivery tiers.
-const deliveryCost = getImportSystemDeliveryCost(streamerPrice);
+// V10.8: use Import's current commission + delivery rules.
+const streamerTermsV108 = usingImportAuthorityV108
+  ? getImportSaleTermsV108(activeImportProductRecordV108, streamerPrice)
+  : { commissionRate: importPricingRulesV108.commissionRate, deliveryCost: getImportSystemDeliveryCost(streamerPrice) };
+const afterCommission = streamerPrice * (1 - streamerTermsV108.commissionRate / 100);
+const deliveryCost = streamerTermsV108.deliveryCost;
 
 // 直播净利
 const profitAfterCommission =
@@ -2866,7 +2996,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V10.7 embedded pull gesture bridge.
+/* Pricing Suite V10.8 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;
