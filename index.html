@@ -282,7 +282,7 @@
     }
 
   
-    /* V10.9 lightweight pull-to-refresh indicator.
+    /* V11.0 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=10.9-import-authority"
+          src="cost-calculator/index.html?v=11.0-import-authority"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=6.8-v10.9"
+          src="bonsai-price-calculator/index.html?v=6.8-v11.0"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -677,7 +677,7 @@
     }
 
     function syncFairPriceToBonsaiCalculator() {
-      // V10.9: when a real Import product is selected on the left, V6.8 must
+      // V11.0: when a real Import product is selected on the left, V6.8 must
       // calculate retail/live/minimum from that product's own effective minimum.
       // Do not overwrite it with the left calculator's Fair price.
       if (linkedImportProductId) return;
@@ -804,7 +804,7 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V10.9: left -> right product identity sync only.
+    // V11.0: left -> right product identity sync only.
     // Right-side product changes never write back to the cost calculator.
     window.addEventListener("message", (event) => {
       if (event.origin !== window.location.origin) return;
@@ -813,7 +813,7 @@
       if (data.type === "selected-import-product") queueLinkedProduct(data);
     });
 
-    // V10.9: lightweight pull-to-refresh.
+    // V11.0: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -938,7 +938,7 @@
       });
     })();
 
-    // V10.9: permanently remove legacy Pricing Suite service workers/caches.
+    // V11.0: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {

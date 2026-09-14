@@ -351,6 +351,14 @@ body {
         font-size: 20px !important;
       }
 
+      /* V11.0: keep the Import cost x3 summary on one line on mobile.
+         JavaScript will reduce only this row's font size when needed. */
+      .result .cost-summary-v110 {
+        white-space: nowrap;
+        overflow: hidden;
+        max-width: 100%;
+      }
+
       .import-product-options {
         padding-top: 58px;
       }
@@ -436,7 +444,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V10.9</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V11.0</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1141,7 +1149,7 @@ body {
             source?.fixedUnitCostRM ??
             source?.unitCost
           ),
-          // V10.9: keep Import's original minimum price separately. The public
+          // V11.0: keep Import's original minimum price separately. The public
           // pricing bridge may replace minimumPrice with an active promotion price.
           originalMinimumPrice: parseCloudNumber(product?.minimumPrice ?? 0),
           // V10.5: effective minimumPrice is supplied only by
@@ -1271,7 +1279,7 @@ body {
     let activeImportProductRecordV108 = null;
     let actualPriceManuallyEdited = false;
 
-    // V10.9: Import System V20.6 is the single authority for product cost and
+    // V11.0: Import System V20.6 is the single authority for product cost and
     // selling-cost rules. Existing Import products use Products.averageCost
     // directly; VND display-pot cost, commission and local-delivery tiers are
     // applied separately exactly like Import V20.6.
@@ -1619,7 +1627,7 @@ body {
           throw new Error(data?.error || "云端资料不完整");
         }
 
-        // V10.9: use the same configurable commission / freight / VND-pot
+        // V11.0: use the same configurable commission / freight / VND-pot
         // settings that Import V20.6 itself currently uses.
         syncImportPricingSettingsV108(data.settings || {});
 
@@ -1738,7 +1746,7 @@ body {
           `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
           ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V10.9：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
+        const line3 = `V11.0：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2211,7 +2219,7 @@ body {
           ).toFixed(2)}%`;
       }
 
-      // V10.9: an existing Import product must not add the legacy fixed local
+      // V11.0: an existing Import product must not add the legacy fixed local
       // cost again. Import averageCost already contains import-side inland /
       // overseas costs; selling-side wood-rack + local delivery is deducted later.
       if (localInput) localInput.value = 0;
@@ -2236,7 +2244,7 @@ body {
       autoSetPotVND();
       closeImportProductOptions();
 
-      // V10.9: one-way product identity sync to the embedded bonsai calculator.
+      // V11.0: one-way product identity sync to the embedded bonsai calculator.
       // Only Product ID + Product Name are shared. Cost/minimum/live prices are NOT
       // pushed across, so V6.8 remains the sole authority for its own pricing.
       try {
@@ -2265,7 +2273,7 @@ body {
           `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V10.9：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
+        const line3 = `V11.0：利润使用 Import 平均成本 + VND花盆 + 木架/本地运费 + 主播佣金`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2358,7 +2366,7 @@ body {
 
       const price = parseFloat(document.getElementById('price').value) || 0;
 
-      // V10.9: use the CURRENT Import V20.6 VND-pot settings, including
+      // V11.0: use the CURRENT Import V20.6 VND-pot settings, including
       // customized values, instead of a separate hard-coded calculator copy.
       potInput.value = String(getVndPotCostV108(currency, price));
     }
@@ -2538,7 +2546,28 @@ const manualRmCost =
   moss +
   local;
 
-// V10.9 authoritative Import-product mode:
+// V11.0: shrink only the first Import-cost summary row until it fits on one line.
+// Never wraps and never changes any calculation value.
+function fitCostSummarySingleLineV110() {
+  const el = document.querySelector('#result .cost-summary-v110');
+  if (!el) return;
+
+  const maxPx = 20;
+  const minPx = 12;
+  el.style.setProperty('font-size', maxPx + 'px', 'important');
+
+  let px = maxPx;
+  while (px > minPx && el.scrollWidth > el.clientWidth) {
+    px -= 0.5;
+    el.style.setProperty('font-size', px + 'px', 'important');
+  }
+}
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(fitCostSummarySingleLineV110);
+});
+
+// V11.0 authoritative Import-product mode:
 // Existing products use Products.averageCost exactly. VND display-pot cost is
 // NOT inside averageCost in Import V20.6, so it is added once here. Legacy
 // calculator inland/freight/moss/local inputs are not layered on top again.
@@ -2598,12 +2627,12 @@ if (actualPrice > 0) {
       };
 
      const costX3 = rmCost * 3;
-      // V10.9: show the all-in per-unit cost directly. For Import VND products,
+      // V11.0: show the all-in per-unit cost directly. For Import VND products,
       // rmCost already equals Import averageCost + VND pot fee.
       const costLabelV109 = usingImportAuthorityV108
         ? `Import 成本：RM ${rmCost.toFixed(2)}`
         : `实际成本：RM ${rmCost.toFixed(2)}`;
-      let html = `<div class="entry" style="font-size:20px;">
+      let html = `<div class="entry cost-summary-v110" style="font-size:20px;">
   <strong>${costLabelV109}</strong>
   <span style="color:#8B0000; font-weight:bold;">
     &nbsp;&nbsp;× 3 = RM ${costX3.toFixed(2)}
@@ -2626,7 +2655,7 @@ const retail50 =
 
 const streamerPrice = retail50;
 
-// V10.9: use Import's current commission + delivery rules.
+// V11.0: use Import's current commission + delivery rules.
 const streamerTermsV108 = usingImportAuthorityV108
   ? getImportSaleTermsV108(activeImportProductRecordV108, streamerPrice)
   : { commissionRate: importPricingRulesV108.commissionRate, deliveryCost: getImportSystemDeliveryCost(streamerPrice) };
@@ -2673,6 +2702,7 @@ const price60Discount = price60 * 0.75 / 2;
       </div>`;
 
       document.getElementById('result').innerHTML = html;
+      fitCostSummarySingleLineV110();
     }
 document.addEventListener('keydown', function(e) {
   const modal = document.getElementById('calcModal');
@@ -2998,7 +3028,7 @@ window.onload = () => {
   </script>
 
 <script>
-/* Pricing Suite V10.9 embedded pull gesture bridge.
+/* Pricing Suite V11.0 embedded pull gesture bridge.
    Passive only: does not prevent, replace, or slow native scrolling. */
 (function () {
   if (window.self === window.top) return;

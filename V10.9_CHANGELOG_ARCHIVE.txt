@@ -1,0 +1,7 @@
+V10.9
+
+- Cost summary display simplified only; calculation logic is unchanged from V10.8.
+- Existing Import products now show the all-in per-unit Import cost directly.
+- For VND products, the displayed Import cost already includes Import averageCost + VND pot fee.
+- Display format: Import 成本：RM181.63 × 3 = RM544.89.
+- Embedded Bonsai Price Calculator remains V6.8.
