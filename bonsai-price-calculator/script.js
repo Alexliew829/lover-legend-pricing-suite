@@ -1,4 +1,4 @@
-// Lover Legend Bonsai Price Calculator V6.8
+// Lover Legend Bonsai Price Calculator V6.9
 const retailInput = document.getElementById("retailPrice");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -21,7 +21,7 @@ const productNameEl = document.getElementById("productName");
 const productDropdownEl = document.getElementById("productDropdown");
 const clearProductBtn = document.getElementById("clearProductBtn");
 const PRODUCT_API_URL = "https://script.google.com/macros/s/AKfycbxWKdEC7vy_7pZ2_CPie-9L5DeIofPggZlLuwB7gW-31HqWXEOxshtCR-HB-m5qLYS6/exec";
-const PRODUCT_PRICING_CACHE_KEY = "ll_bonsai_product_pricing_v63";
+const PRODUCT_PRICING_CACHE_KEY = "ll_bonsai_product_pricing_v69";
 let productPricingList = [];
 let productPricingLoaded = false;
 let productPricingLoading = null;
@@ -80,23 +80,33 @@ function formatIDR(value) {
   return "Rp" + Math.round(value).toLocaleString("id-ID");
 }
 
-function getLivePrice(retail) {
-  if (retail <= 500) return retail;
-  return roundDown100(retail * 0.92);
+function roundDown50(value) {
+  return Math.floor(Number(value || 0) / 50) * 50;
 }
 
+function getLivePrice(retail) {
+  if (retail <= 500) return retail;
+  return Math.max(500, roundDown50(retail * 0.92));
+}
 
-// V6.8 accepted pricing logic:
+// V6.9 pricing logic:
 // 1) TikTok = retail -18% (x0.82), rounded to nearest RM10.
-// 2) Live price keeps the proven V6.8 rule above.
-// 3) Suggested minimum = live x80%, rounded to nearest RM10.
-// 4) Product mode preserves the exact Import minimum and finds the first safe retail price ending in 80.
+// 2) Manual retail mode: <=RM500 keeps live=retail; >RM500 uses x0.92,
+//    rounded DOWN to RM50, with a RM500 live-price floor to prevent 500/501 inversion.
+// 3) Manual-mode suggested minimum = live x80%, rounded to nearest RM10.
+// 4) Product mode keeps Import minimum as the absolute floor, does NOT generate/show a retail price,
+//    and keeps the proven V6.8 product reverse-live mapping so existing product pricing stays stable.
 function getSuggestedMinimumFromLive(livePrice) {
   return livePrice > 0 ? roundToNearest10(livePrice * 0.80) : 0;
 }
 
 function getRoundedTikTokPrice(retail) {
   return retail > 0 ? roundToNearest10(retail * 0.82) : 0;
+}
+
+function getProductReverseLiveV68(retail) {
+  if (retail <= 500) return retail;
+  return roundDown100(retail * 0.92);
 }
 
 function reversePriceFromMinimum(importMinimum) {
@@ -119,14 +129,14 @@ function reversePriceFromMinimum(importMinimum) {
   // is not below the exact Import minimum.
   const maxRetail = Math.max(1000000, Math.ceil(target * 4));
   for (let retail = 80; retail <= maxRetail; retail += 100) {
-    const live = getLivePrice(retail);
+    const live = getProductReverseLiveV68(retail);
     const suggestedMinimum = getSuggestedMinimumFromLive(live);
     if (suggestedMinimum >= target) {
       return { retail, live, suggestedMinimum };
     }
   }
   const fallbackRetail = Math.ceil((target / 0.80 / 0.92) / 100) * 100 + 80;
-  const fallbackLive = getLivePrice(fallbackRetail);
+  const fallbackLive = getProductReverseLiveV68(fallbackRetail);
   return { retail: fallbackRetail, live: fallbackLive, suggestedMinimum: getSuggestedMinimumFromLive(fallbackLive) };
 }
 
@@ -181,9 +191,10 @@ function setProductMode(product) {
   const minimum = Math.max(0, Number(selectedProduct.minimumPrice) || 0);
   const prices = reversePriceFromMinimum(minimum);
 
-  // V6.8: never inherit the previous product's generated prices.
-  // This is especially important when the newly typed exact PZ has minimumPrice = 0/blank.
-  retailInput.value = prices.retail > 0 ? formatPriceInput(prices.retail) : "";
+  // V6.9 product mode: Import minimum is the absolute floor.
+  // Do not generate/show a retail price because the physical tree already has its own tag price.
+  // Keep the proven V6.8 reverse-live mapping so existing product prices do not unexpectedly shift.
+  retailInput.value = "";
   livePriceEl.value = prices.live > 0 ? formatPriceInput(prices.live) : "";
   if (productNameEl) {
     productNameEl.value = selectedProduct.name || "";
@@ -313,7 +324,7 @@ function renderProductMatches(query) {
   const normalized = normalizeProductSearch(query);
   if (!normalized) { closeProductDropdown(); return; }
 
-  // V6.8: one input searches Product ID OR product name, like the pricing calculator search.
+  // V6.9: one input searches Product ID OR product name, like the pricing calculator search.
   // No fuzzy/reversed-letter matching: typed text must appear in the original order.
   const matches = productPricingList.filter(function (product) {
     const id = product.normalizedId || "";
@@ -435,7 +446,7 @@ function formatIDRCompact(value) {
 }
 
 function formatForeignPrice(currency, value) {
-  // V6.8: MYR/TWD are already named in the currency selector, so the large
+  // V6.9: MYR/TWD are already named in the currency selector, so the large
   // number does not repeat RM or NT$. This prevents high values being clipped.
   if (currency === "MYR") {
     return Number(value || 0).toLocaleString("en-MY", {
@@ -504,12 +515,18 @@ function setLiveInputMode(retailMode, livePrice) {
 }
 
 function calculate() {
-  const retailMode = hasRetailPrice();
+  const productMode = Boolean(selectedProduct);
+  const retailMode = !productMode && hasRetailPrice();
   const retail = retailMode ? cleanNumber(retailInput.value) : 0;
   const tiktokPrice = getRoundedTikTokPrice(retail);
-  const livePrice = retailMode ? getLivePrice(retail) : getManualLivePrice();
+  const productPrices = productMode
+    ? reversePriceFromMinimum(Math.max(0, Number(selectedProduct.minimumPrice) || 0))
+    : null;
+  const livePrice = productMode
+    ? productPrices.live
+    : (retailMode ? getLivePrice(retail) : getManualLivePrice());
 
-  setLiveInputMode(retailMode, livePrice);
+  setLiveInputMode(productMode || retailMode, livePrice);
 
   const sameRackDiscount = livePrice >= 500 ? "-RM30.00" : "-";
   let pickupDiscount;
@@ -551,7 +568,7 @@ async function loadExchangeRates() {
   calculate();
 }
 
-// Indonesia inland estimate V6.8.
+// Indonesia inland estimate V6.9.
 // Reference model for large-cargo pre-sale quoting. J&T Cargo's official checker uses
 // origin, destination, weight and dimensions; this static GitHub Pages app has no live tariff API.
 // Cargo volumetric weight uses L*W*H/5000. Rates below are conservative market-reference bands,
@@ -577,7 +594,7 @@ function formatIndonesiaSeaInput() {
 }
 
 
-// V6.8: exact 5-digit Indonesia Postcode -> province detection.
+// V6.9: exact 5-digit Indonesia Postcode -> province detection.
 // No broad numeric ranges are used. A national postcode dataset is loaded once,
 // converted to an exact postcode->province map, then cached on the device.
 const POSTCODE_PROVINCE_MAP = {
@@ -619,7 +636,7 @@ const PROVINCE_CODE_MAP = {
 };
 
 
-// V6.8: representative postcode used only when the presenter manually changes region.
+// V6.9: representative postcode used only when the presenter manually changes region.
 // A real customer postcode entered by the user still takes priority and is precisely detected.
 const REGION_DEFAULT_POSTCODE = {
   JAKARTA:"10310", BANTEN:"15111", WEST_JAVA:"16110", CENTRAL_JAVA:"50111", YOGYAKARTA:"55111", EAST_JAVA:"60111",
@@ -764,7 +781,7 @@ function calculateIndonesiaShipping() {
   const billKg = Math.max(chargeKg, z[1]);
   let inlandIdr = z[0] * billKg;
 
-  // V6.8: region-based commercial safety buffer for pre-sale quotes.
+  // V6.9: region-based commercial safety buffer for pre-sale quotes.
   // This buffer is NOT an official tax/fee. It protects against inland cargo price variation,
   // handling and other possible surcharges before the logistics company confirms the final charge.
   const BUFFER_15 = new Set(["JAKARTA","BANTEN","WEST_JAVA","CENTRAL_JAVA","YOGYAKARTA","EAST_JAVA"]);
@@ -799,7 +816,7 @@ function calculateIndonesiaShipping() {
   note.innerHTML = "J&T Cargo 市场参考估算，不是 J&T 官方实时报价。" + pc + " 实际收费以物流公司确认为准。<br>Anggaran rujukan pasaran J&T Cargo, bukan kadar rasmi masa nyata. Caj sebenar tertakluk kepada pengesahan syarikat logistik.";
 }
 
-// Taiwan freight estimate V6.8. 3-digit district prefixes are sufficient for city/county routing.
+// Taiwan freight estimate V6.9. 3-digit district prefixes are sufficient for city/county routing.
 const TW_PREFIX = {"100":"TAIPEI","103":"TAIPEI","104":"TAIPEI","105":"TAIPEI","106":"TAIPEI","108":"TAIPEI","110":"TAIPEI","111":"TAIPEI","112":"TAIPEI","114":"TAIPEI","115":"TAIPEI","116":"TAIPEI","200":"KEELUNG","201":"KEELUNG","202":"KEELUNG","203":"KEELUNG","204":"KEELUNG","205":"KEELUNG","206":"KEELUNG","207":"NEW_TAIPEI","208":"NEW_TAIPEI","220":"NEW_TAIPEI","221":"NEW_TAIPEI","222":"NEW_TAIPEI","223":"NEW_TAIPEI","224":"NEW_TAIPEI","226":"NEW_TAIPEI","231":"NEW_TAIPEI","232":"NEW_TAIPEI","233":"NEW_TAIPEI","234":"NEW_TAIPEI","235":"NEW_TAIPEI","236":"NEW_TAIPEI","237":"NEW_TAIPEI","238":"NEW_TAIPEI","239":"NEW_TAIPEI","241":"NEW_TAIPEI","242":"NEW_TAIPEI","243":"NEW_TAIPEI","244":"NEW_TAIPEI","247":"NEW_TAIPEI","248":"NEW_TAIPEI","249":"NEW_TAIPEI","260":"YILAN","300":"HSINCHU","302":"HSINCHU","320":"TAOYUAN","330":"TAOYUAN","350":"MIAOLI","400":"TAICHUNG","500":"CHANGHUA","540":"NANTOU","600":"CHIAYI","630":"YUNLIN","700":"TAINAN","800":"KAOHSIUNG","900":"PINGTUNG","950":"TAITUNG","970":"HUALIEN"};
 const TW_DEFAULT_PC={KAOHSIUNG:"800",TAINAN:"700",CHIAYI:"600",YUNLIN:"630",CHANGHUA:"500",TAICHUNG:"400",NANTOU:"540",MIAOLI:"350",HSINCHU:"300",TAOYUAN:"330",NEW_TAIPEI:"220",TAIPEI:"100",KEELUNG:"200",YILAN:"260",HUALIEN:"970",TAITUNG:"950",PINGTUNG:"900",ISLANDS:"880"};
 // Planning rates in TWD/kg and minimum chargeable kg; conservative commercial estimates, not carrier tariffs.
@@ -928,7 +945,7 @@ document.querySelectorAll("#indonesiaShipping input, #indonesiaShipping select")
 
 const indoPostcodeInput = document.getElementById("indoPostcode");
 if (indoPostcodeInput) {
-  // V6.8: tap/focus selects the whole postcode for one-step replace/delete.
+  // V6.9: tap/focus selects the whole postcode for one-step replace/delete.
   indoPostcodeInput.addEventListener("focus", function () { this.select(); });
   indoPostcodeInput.addEventListener("click", function () { this.select(); });
   indoPostcodeInput.addEventListener("input", function () {
@@ -999,7 +1016,8 @@ async function clearLegacyPwaCache() {
 }
 
 function enablePullToRefresh() {
-  // V11.0 integration: parent suite is the only refresh controller when embedded.
+  // V11.1 integration: when embedded, the parent suite is the only refresh controller.
+  // This prevents duplicate refresh handlers and keeps touch scrolling fully native.
   if (window.self !== window.top) {
     if (pullRefreshEl) pullRefreshEl.style.display = "none";
     return;
@@ -1069,7 +1087,7 @@ async function startCalculator() {
   resetCurrencyToDefault();
   resetCalculator();
   loadExchangeRates();
-  // V6.8: hydrate last successful safe product pricing immediately, then refresh cloud data in background.
+  // V6.9: hydrate last successful safe product pricing immediately, then refresh cloud data in background.
   hydrateProductPricingCache();
   setTimeout(function () { loadProductPricing(true).catch(function () {}); }, 50);
 }

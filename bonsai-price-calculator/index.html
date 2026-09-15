@@ -9,8 +9,8 @@
   <meta http-equiv="Expires" content="0" />
 
   <title>Kalkulator Harga Bonsai | 盆景价格计算器</title>
-  <link rel="stylesheet" href="style.css?v=6.5" />
-  <link rel="manifest" href="manifest.json?v=6.5" />
+  <link rel="stylesheet" href="style.css?v=6.9" />
+  <link rel="manifest" href="manifest.json?v=6.9" />
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
 
   <meta name="theme-color" content="#1E5631" />
@@ -30,7 +30,7 @@
         <div class="title-ms">Kalkulator Harga Bonsai</div>
         <div class="company-line">
           <div class="company">Lover Legend Gardening</div>
-          <div class="version">V6.8</div>
+          <div class="version">V6.9</div>
         </div>
       </div>
 
@@ -259,10 +259,11 @@
     </section>
   </main>
 
-  <script src="script.js?v=6.5"></script>
+  <script src="script.js?v=6.9"></script>
 
 <script>
-/* Pricing Suite V11.0 integration bridge. Passive only; parent owns refresh. */
+/* Pricing Suite V11.1 integration bridge.
+   Passive only: parent owns refresh; no preventDefault and no scroll hijacking. */
 (function () {
   if (window.self === window.top) return;
   function send(phase, y) {

@@ -786,7 +786,7 @@ color: #0B5ED7;
 }
 
 
-/* V6.8 product lookup: compact ID/product search + wider live price. */
+/* V6.9 product lookup: compact ID/product search + wider live price. */
 .product-live-row {
   align-items: stretch;
   position: relative;
@@ -912,7 +912,7 @@ color: #0B5ED7;
   .live-price-input { min-width: 0; }
 }
 
-/* V6.8: compact product picker and guarantee full live-price visibility. */
+/* V6.9: compact product picker and guarantee full live-price visibility. */
 .product-picker {
   width: 38%;
   flex: 0 0 38%;
@@ -948,7 +948,7 @@ color: #0B5ED7;
 }
 
 
-/* V6.8 layout only: wider product area, one-line Live label, no RM prefix. */
+/* V6.9 layout only: wider product area, one-line Live label, no RM prefix. */
 .product-live-row {
   display: flex;
   align-items: stretch;
@@ -1029,7 +1029,7 @@ color: #0B5ED7;
 }
 
 
-/* V6.8 layout only: full-width Product ID row with two boxes; Live label moved above the lower price. */
+/* V6.9 layout only: full-width Product ID row with two boxes; Live label moved above the lower price. */
 .product-only-row {
   display: block;
   padding-top: 7px;
@@ -1146,7 +1146,7 @@ color: #0B5ED7;
   .live-below-panel #foreignPrice { font-size: 23px; }
 }
 
-/* V6.8: searchable product-name box; ID box reserves comfortable space for 7 characters. */
+/* V6.9: searchable product-name box; ID box reserves comfortable space for 7 characters. */
 .product-two-boxes {
   grid-template-columns: minmax(118px, 34%) minmax(0, 66%);
 }
@@ -1170,7 +1170,7 @@ color: #0B5ED7;
   .product-name-box { font-size: 16px; padding: 6px 8px; }
 }
 
-/* V6.8 UI alignment: Product ID and Product Name boxes share the exact same visual height. */
+/* V6.9 UI alignment: Product ID and Product Name boxes share the exact same visual height. */
 .product-two-boxes {
   align-items: stretch;
 }

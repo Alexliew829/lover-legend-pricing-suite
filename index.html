@@ -8,9 +8,9 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#eef2ec" />
   <title>Lover Legend Pricing Suite</title>
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=10.6" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10.6" />
-  <link rel="manifest" href="./manifest.json?v=10.6" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=11.1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=11.1" />
+  <link rel="manifest" href="./manifest.json?v=11.1" />
 
   <style>
     * { box-sizing: border-box; }
@@ -282,7 +282,7 @@
     }
 
   
-    /* V11.0 lightweight pull-to-refresh indicator.
+    /* V11.1 lightweight pull-to-refresh indicator.
        No preventDefault / no scroll hijacking, so normal iPhone scrolling stays native. */
     #suitePullRefresh {
       position: fixed;
@@ -365,7 +365,7 @@
       <section class="panel" aria-label="成本与售价计算器">
         <iframe
           id="costFrame"
-          src="cost-calculator/index.html?v=11.0-import-authority"
+          src="cost-calculator/index.html?v=11.1-import-authority"
           title="成本与售价计算器"
           loading="eager"
           scrolling="no"
@@ -377,7 +377,7 @@
       <section class="panel" aria-label="盆景价格计算器">
         <iframe
           id="priceFrame"
-          src="bonsai-price-calculator/index.html?v=6.8-v11.0"
+          src="bonsai-price-calculator/index.html?v=6.9-v11.1"
           title="盆景价格计算器"
           loading="eager"
           scrolling="no"
@@ -677,7 +677,7 @@
     }
 
     function syncFairPriceToBonsaiCalculator() {
-      // V11.0: when a real Import product is selected on the left, V6.8 must
+      // V11.1: when a real Import product is selected on the left, V6.9 must
       // calculate retail/live/minimum from that product's own effective minimum.
       // Do not overwrite it with the left calculator's Fair price.
       if (linkedImportProductId) return;
@@ -702,7 +702,7 @@
 
         idInput.value = String(payload.productId || "").trim();
         idInput.dispatchEvent(new Event("input", { bubbles: true }));
-        // V6.8 resolves the official current ID, name and effective minimum itself.
+        // V6.9 resolves the official current ID, name and effective minimum itself.
         // Nothing is written back to the left calculator.
         return true;
       } catch (error) {
@@ -804,7 +804,7 @@
     // This lets iPhone/Safari handle normal scrolling and its own pull-to-refresh behavior.
 
 
-    // V11.0: left -> right product identity sync only.
+    // V11.1: left -> right product identity sync only.
     // Right-side product changes never write back to the cost calculator.
     window.addEventListener("message", (event) => {
       if (event.origin !== window.location.origin) return;
@@ -813,7 +813,7 @@
       if (data.type === "selected-import-product") queueLinkedProduct(data);
     });
 
-    // V11.0: lightweight pull-to-refresh.
+    // V11.1: lightweight pull-to-refresh.
     // Gestures are observed passively in the outer page and both embedded calculators.
     // Nothing calls preventDefault(), so scrolling remains native and smooth.
     (function enableSuitePullRefresh() {
@@ -893,13 +893,13 @@
         refreshing = true;
         try {
           const now = Date.now();
-          const previous = Number(sessionStorage.getItem("loverLegendSuiteRefreshAtV106") || 0);
+          const previous = Number(sessionStorage.getItem("loverLegendSuiteRefreshAtV111") || 0);
           if (now - previous < 1500) {
             resetIndicator();
             refreshing = false;
             return;
           }
-          sessionStorage.setItem("loverLegendSuiteRefreshAtV106", String(now));
+          sessionStorage.setItem("loverLegendSuiteRefreshAtV111", String(now));
         } catch (error) {}
         indicator.textContent = "刷新中... / Refreshing...";
         indicator.classList.add("show", "ready");
@@ -907,7 +907,7 @@
 
         setTimeout(() => {
           const url = new URL(window.location.href);
-          url.searchParams.set("_v", "10.6");
+          url.searchParams.set("_v", "11.1");
           url.searchParams.set("_refresh", Date.now().toString());
           window.location.replace(url.toString());
         }, 120);
@@ -938,7 +938,7 @@
       });
     })();
 
-    // V11.0: permanently remove legacy Pricing Suite service workers/caches.
+    // V11.1: permanently remove legacy Pricing Suite service workers/caches.
     // The suite now relies on normal browser networking so mobile clients cannot
     // remain pinned to an older V9.0/V9.1 cached shell.
     window.addEventListener("load", async () => {
@@ -958,11 +958,11 @@
 
       if (hadController) {
         try {
-          const reloadKey = "loverLegendPricingSuiteCleanupV106";
+          const reloadKey = "loverLegendPricingSuiteCleanupV111";
           if (!sessionStorage.getItem(reloadKey)) {
             sessionStorage.setItem(reloadKey, "1");
             const url = new URL(window.location.href);
-            url.searchParams.set("_v", "10.6");
+            url.searchParams.set("_v", "11.1");
             url.searchParams.set("_refresh", Date.now().toString());
             window.location.replace(url.toString());
           }
