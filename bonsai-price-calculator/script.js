@@ -1016,7 +1016,7 @@ async function clearLegacyPwaCache() {
 }
 
 function enablePullToRefresh() {
-  // V11.1 integration: when embedded, the parent suite is the only refresh controller.
+  // V11.2 integration: when embedded, the parent suite is the only refresh controller.
   // This prevents duplicate refresh handlers and keeps touch scrolling fully native.
   if (window.self !== window.top) {
     if (pullRefreshEl) pullRefreshEl.style.display = "none";
