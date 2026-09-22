@@ -1,9 +1,0 @@
-V10.8
-
-- Existing Import products now use Import System Products.averageCost as the authoritative product cost.
-- VND display-pot cost remains separate from averageCost and follows current Import V20.6 settings (RM35/55/105/180 defaults, including custom settings from cloud).
-- Wood-rack + local-delivery tiers and streamer commission now read current Import System minimum-price settings from the full pull.
-- Active promotion uses Import promotion commission and keeps delivery tier locked to the product original minimum-price tier, matching Import V20.6.
-- Existing Import products no longer stack the calculator legacy local/moss/import-recalculation costs on top of averageCost.
-- Manual/new-product mode keeps the existing calculator estimation behavior.
-- Embedded Bonsai Calculator remains V6.8; product identity sync remains one-way.
