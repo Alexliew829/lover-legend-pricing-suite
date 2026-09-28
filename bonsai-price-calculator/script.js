@@ -1,4 +1,4 @@
-// Lover Legend Bonsai Price Calculator V6.9
+// Lover Legend Bonsai Price Calculator V7.1
 const retailInput = document.getElementById("retailPrice");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -89,15 +89,28 @@ function getLivePrice(retail) {
   return Math.max(500, roundDown50(retail * 0.92));
 }
 
-// V6.9 pricing logic:
+// V7.1 pricing logic:
 // 1) TikTok = retail -18% (x0.82), rounded to nearest RM10.
 // 2) Manual retail mode: <=RM500 keeps live=retail; >RM500 uses x0.92,
 //    rounded DOWN to RM50, with a RM500 live-price floor to prevent 500/501 inversion.
-// 3) Manual-mode suggested minimum = live x80%, rounded to nearest RM10.
+// 3) Manual-mode suggested minimum = retail x80%; retail <=RM500 rounds to nearest RM10, retail >RM500 rounds UP to a price ending in RM80.
 // 4) Product mode keeps Import minimum as the absolute floor, does NOT generate/show a retail price,
 //    and keeps the proven V6.8 product reverse-live mapping so existing product pricing stays stable.
 function getSuggestedMinimumFromLive(livePrice) {
   return livePrice > 0 ? roundToNearest10(livePrice * 0.80) : 0;
+}
+
+function roundUpToEnding80(value) {
+  const amount = Math.max(0, Number(value) || 0);
+  if (amount <= 0) return 0;
+  return Math.ceil((amount + 20) / 100) * 100 - 20;
+}
+
+function getManualMinimumFromRetail(retail) {
+  const price = Math.max(0, Number(retail) || 0);
+  if (price <= 0) return 0;
+  const target = price * 0.80;
+  return price <= 500 ? roundToNearest10(target) : roundUpToEnding80(target);
 }
 
 function getRoundedTikTokPrice(retail) {
@@ -537,7 +550,7 @@ function calculate() {
   const pickupPrice = livePrice > 0 ? Math.max(0, livePrice - pickupDiscount) : 0;
   const minimumPrice = selectedProduct
     ? Math.max(0, Number(selectedProduct.minimumPrice) || 0)
-    : getSuggestedMinimumFromLive(livePrice);
+    : (retailMode ? getManualMinimumFromRetail(retail) : 0);
 
   sameRackPriceEl.textContent = sameRackDiscount;
   pickupPriceEl.textContent = formatRM(pickupPrice);
@@ -1016,7 +1029,7 @@ async function clearLegacyPwaCache() {
 }
 
 function enablePullToRefresh() {
-  // V11.2 integration: when embedded, the parent suite is the only refresh controller.
+  // V11.3 integration: when embedded, the parent suite is the only refresh controller.
   // This prevents duplicate refresh handlers and keeps touch scrolling fully native.
   if (window.self !== window.top) {
     if (pullRefreshEl) pullRefreshEl.style.display = "none";
