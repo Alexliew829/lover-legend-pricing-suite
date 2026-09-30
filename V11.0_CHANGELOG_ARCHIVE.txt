@@ -1,7 +1,0 @@
-V11.0
-
-- Mobile display only: Import cost x3 summary stays on one line.
-- The summary font automatically shrinks only when needed to fit the available width.
-- No wrapping and no right-side truncation.
-- Cost, VND pot, wood-rack/local-delivery, commission and profit formulas are unchanged from V10.9.
-- Embedded Bonsai Price Calculator remains V6.8.
