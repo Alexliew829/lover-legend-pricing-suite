@@ -1,0 +1,9 @@
+Lover Legend Cost & Pricing Calculator V11.4
+
+1. Based on V11.3; embedded Bonsai Price Calculator remains V7.1.
+2. Existing Import product mode now locks currency, exchange rate, inland-misc percentage and overseas-freight percentage.
+3. Only pot cost, moss cost and local delivery remain editable after selecting an Import product.
+4. Import cost formula is now: Import averageCost + current pot + current moss + current local delivery.
+5. VND pot auto-default behavior is preserved (e.g. RM35 for the applicable tier) and the user may edit it afterward.
+6. No change to product search, pricing formulas outside this Import-cost composition, left-to-right product sync, save/delete/sync behavior, or mobile single-controller pull-to-refresh.
+7. Current suite version updated to V11.4; embedded bonsai remains V7.1.
