@@ -500,6 +500,7 @@ body {
     <div>
       <label for="currency">货币：</label>
       <select id="currency" onchange="setRate()">
+        <option value="MYR">MYR</option>
         <option selected value="CNY">CNY</option>
         <option value="NTD">NTD</option>
         <option value="VND">VND</option>
@@ -705,19 +706,21 @@ body {
 
   <script>
     const defaultRates = {
+  MYR: 1,
   CNY: 1.6,
   NTD: 7.69,
   VND: 6300.00,
   IDR: 3571.00
 };
     const defaultFreight = {
+      MYR: "0%",
       CNY: "20%",
       NTD: "20%",
       VND: "84.75%",
       IDR: "50%"
     };
 
-    const defaultLocal = { CNY: 0, NTD: 20, VND: 20, IDR: 20 };
+    const defaultLocal = { MYR: 0, CNY: 0, NTD: 20, VND: 20, IDR: 20 };
 
 
     const PRICING_SETTINGS_KEY = "loverLegendPricingSettingsV1";
@@ -1754,7 +1757,7 @@ body {
           `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
           ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.4：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.5：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2171,7 +2174,7 @@ body {
         record.currency ??
         record.money ??
         ""
-      ).toUpperCase();
+      ).trim().toUpperCase();
 
       const unitPrice = Number(
         record.unitPrice ??
@@ -2228,16 +2231,16 @@ body {
       }
 
       if (rateInput) {
-        const finalRate = Number.isFinite(recordRate) && recordRate > 0
+        const finalRate = currency === "MYR" ? 1 : (Number.isFinite(recordRate) && recordRate > 0
           ? recordRate
-          : defaultRates[currency];
+          : defaultRates[currency]);
         rateInput.value = Number(finalRate || 0).toFixed(6);
       }
 
       if (freightInput) {
-        const finalFreight = Number.isFinite(shippingRate) && shippingRate > 0
+        const finalFreight = currency === "MYR" ? 0 : (Number.isFinite(shippingRate) && shippingRate > 0
           ? shippingRate
-          : parseFloat(defaultFreight[currency]) || 0;
+          : parseFloat(defaultFreight[currency]) || 0);
         freightInput.value = `${Number(finalFreight || 0).toFixed(2)}%`;
       }
 
@@ -2305,7 +2308,7 @@ body {
           `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.4：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.5：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
