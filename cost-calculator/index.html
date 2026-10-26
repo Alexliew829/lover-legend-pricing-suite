@@ -452,7 +452,7 @@ body {
   <h1>
     <img src="Logo2.jpg" alt="情人传奇 Logo" />
     <span>成本与售价计算器</span>
-    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V11.4</span>
+    <span style="font-size:16px; color:#666; font-weight:bold; margin-left:4px;">V11.6</span>
   </h1>
   <p style="color: red; font-weight: bold; font-size: 26px; letter-spacing: 1px;">
     – Lover Legend Gardening
@@ -1757,7 +1757,7 @@ body {
           `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
           ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.5：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.6：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2308,7 +2308,7 @@ body {
           `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.5：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.6：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
