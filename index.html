@@ -677,7 +677,7 @@
     }
 
     function syncFairPriceToBonsaiCalculator() {
-      // V11.5: when a real Import product is selected on the left, V7.1 must
+      // V11.5: when a real Import product is selected on the left, V7.2 must
       // calculate retail/live/minimum from that product's own effective minimum.
       // Do not overwrite it with the left calculator's Fair price.
       if (linkedImportProductId) return;
@@ -702,7 +702,7 @@
 
         idInput.value = String(payload.productId || "").trim();
         idInput.dispatchEvent(new Event("input", { bubbles: true }));
-        // V7.1 resolves the official current ID, name and effective minimum itself.
+        // V7.2 resolves the official current ID, name and effective minimum itself.
         // Nothing is written back to the left calculator.
         return true;
       } catch (error) {

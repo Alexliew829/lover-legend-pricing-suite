@@ -1,4 +1,4 @@
-// Lover Legend Bonsai Price Calculator V7.1
+// Lover Legend Bonsai Price Calculator V7.2
 const retailInput = document.getElementById("retailPrice");
 const clearBtn = document.getElementById("clearBtn");
 
@@ -89,7 +89,7 @@ function getLivePrice(retail) {
   return Math.max(500, roundDown50(retail * 0.92));
 }
 
-// V7.1 pricing logic:
+// V7.2 pricing logic:
 // 1) TikTok = retail -18% (x0.82), rounded to nearest RM10.
 // 2) Manual retail mode: <=RM500 keeps live=retail; >RM500 uses x0.92,
 //    rounded DOWN to RM50, with a RM500 live-price floor to prevent 500/501 inversion.
@@ -123,34 +123,12 @@ function getProductReverseLiveV68(retail) {
 }
 
 function reversePriceFromMinimum(importMinimum) {
-  const target = Math.max(0, Number(importMinimum) || 0);
-  if (target <= 0) return { retail: 0, live: 0, suggestedMinimum: 0 };
+  const minimum = Math.max(0, Number(importMinimum) || 0);
+  if (minimum <= 0) return { retail: 0, live: 0, suggestedMinimum: 0 };
 
-  // V6.8 low-price product reverse rule:
-  // Import minimum -> /80% -> live rounded to nearest RM10.
-  // When that live price is <= RM500, retail must be the next STRICTLY HIGHER ...80 price.
-  // Examples: 210 -> 260 -> 280, 300 -> 380 -> 480, 380 -> 480 -> 580.
-  const directLive = roundToNearest10(target / 0.80);
-  if (directLive <= 500) {
-    const nextRetail80 = Math.floor((directLive + 20) / 100) * 100 + 80;
-    const retail = nextRetail80 <= directLive ? nextRetail80 + 100 : nextRetail80;
-    return { retail, live: directLive, suggestedMinimum: getSuggestedMinimumFromLive(directLive) };
-  }
-
-  // Higher-price products keep the accepted safe reverse logic:
-  // generate ...80 retail prices and choose the first combination whose live x80%
-  // is not below the exact Import minimum.
-  const maxRetail = Math.max(1000000, Math.ceil(target * 4));
-  for (let retail = 80; retail <= maxRetail; retail += 100) {
-    const live = getProductReverseLiveV68(retail);
-    const suggestedMinimum = getSuggestedMinimumFromLive(live);
-    if (suggestedMinimum >= target) {
-      return { retail, live, suggestedMinimum };
-    }
-  }
-  const fallbackRetail = Math.ceil((target / 0.80 / 0.92) / 100) * 100 + 80;
-  const fallbackLive = getProductReverseLiveV68(fallbackRetail);
-  return { retail: fallbackRetail, live: fallbackLive, suggestedMinimum: getSuggestedMinimumFromLive(fallbackLive) };
+  // V7.2: Import minimum remains authoritative; only the live opening price changes.
+  const live = Math.ceil(minimum / 0.90 / 50) * 50;
+  return { retail: 0, live, suggestedMinimum: minimum };
 }
 
 function normalizeProductId(value) {
