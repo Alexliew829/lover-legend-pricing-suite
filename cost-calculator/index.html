@@ -445,6 +445,17 @@ body {
       color: #555 !important;
       cursor: not-allowed !important;
     }
+
+/* V11.8: independent reverse-live estimator; no refresh or sync hooks. */
+#reverseLivePanelV118{margin:8px 0 10px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-size:17px;line-height:1.5;color:#17212b}
+#reverseLivePanelV118[hidden]{display:none!important}
+#reverseLivePanelV118 label{display:block;font-weight:700;margin:5px 0 3px}
+#reverseLivePanelV118 input,#reverseLivePanelV118 select{box-sizing:border-box;width:100%;min-height:42px;font-size:18px;padding:6px 9px;border:1px solid #aeb9c5;border-radius:7px;background:white;color:#111}
+#reverseLivePanelV118 .reverse-fields{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+#reverseLivePanelV118 .reverse-output{margin-top:9px;font-size:17px;font-weight:700;overflow-wrap:anywhere}
+#reverseLivePanelV118 .reverse-note{font-size:13px;color:#555;font-weight:400}
+#reverseToggleV118{font-size:15px;font-weight:700;padding:5px 12px;border:1px solid #26774d;border-radius:8px;background:#eaf7ef;color:#155d36;cursor:pointer;touch-action:manipulation}
+@media(max-width:430px){#reverseLivePanelV118{padding:9px}#reverseLivePanelV118 .reverse-fields{gap:6px}#reverseLivePanelV118 input,#reverseLivePanelV118 select{font-size:17px}}
 </style>
 </head>
 
@@ -609,6 +620,15 @@ body {
   </div>
 </div>
     <div class="result" id="result"></div>
+    <section id="reverseLivePanelV118" hidden aria-label="直播售价反推估计成本">
+      <div style="font-weight:800;margin-bottom:5px">直播售价反推估计成本</div>
+      <div class="reverse-fields">
+        <div><label for="reverseCurrencyV118">进口货币</label><select id="reverseCurrencyV118"><option value="VND">VND</option><option value="CNY">CNY</option><option value="MYR">MYR</option><option value="NTD">NTD</option><option value="IDR">IDR</option></select></div>
+        <div><label for="reversePriceV118">别家直播售价 RM</label><input id="reversePriceV118" type="number" min="0" step="0.01" inputmode="decimal" placeholder="例如 2800"></div>
+      </div>
+      <div id="reverseResultV118" class="reverse-output" aria-live="polite">输入售价后显示估计成本。</div>
+      <div class="reverse-note">仅按我的定价规则估算，不代表对方真实成本。独立计算，不保存资料。</div>
+    </section>
 
   <!-- ✅ 小计算器弹窗 -->
   <div id="calcModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; touch-action: manipulation;">
@@ -1757,7 +1777,7 @@ body {
           `最低售价 RM ${safeMinimumPrice.toFixed(2)}` +
           ` · 海外运费 ${(Number.isFinite(shippingRate) ? shippingRate : 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.6：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.8：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2308,7 +2328,7 @@ body {
           `最低售价 RM ${Number(record.minimumPrice || 0).toFixed(2)}` +
           ` · 海外运费 ${Number(record.shippingRate || 0).toFixed(2)}%` +
           ` · ${record.mappingStatus === "BATCH_MATCHED" ? "Batch 已匹配" : "Batch 未匹配"}`;
-        const line3 = `V11.6：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
+        const line3 = `V11.8：Import 成本 = 平均成本 + 花盆 + 苔藓 + 本地运费；进口币种/汇率/杂费/海外运费已锁定`;
         status.innerHTML = `${line1}<br>${line2}<br>${line3}`;
       }
     }
@@ -2669,6 +2689,7 @@ if (actualPrice > 0) {
     &nbsp;&nbsp;× 3 = RM ${costX3.toFixed(2)}
   </span>
 </div>`;
+      html += `<div class="entry" style="padding:3px 0 5px;"><button id="reverseToggleV118" type="button" onclick="toggleReverseLiveV118()" aria-expanded="false">反推成本 ▾</button></div>`;
 
       html += `<div class="entry" style="font-size: 20px;"><strong>20% 批发售价：</strong>RM ${prices["20%"].toFixed(2)}</div>`;
       html += `<div class="entry" style="font-size: 20px; color: #0d47a1; font-weight: bold;"><strong>30% 利润售价：</strong>RM ${prices["30%"].toFixed(2)}</div>`;
@@ -2735,6 +2756,54 @@ const price60Discount = price60 * 0.75 / 2;
       document.getElementById('result').innerHTML = html;
       fitCostSummarySingleLineV110();
     }
+
+// V11.8: pure independent estimation. This never invokes calculate(), Import,
+// embedded bonsai, network requests, or pull-to-refresh handlers.
+function toggleReverseLiveV118(){
+  const panel=document.getElementById('reverseLivePanelV118');
+  if(!panel)return;
+  panel.hidden=!panel.hidden;
+  const button=document.getElementById('reverseToggleV118');
+  if(button){button.textContent=panel.hidden?'反推成本 ▾':'反推成本 ▴';button.setAttribute('aria-expanded',String(!panel.hidden));}
+  if(!panel.hidden)updateReverseLiveV118();
+}
+function updateReverseLiveV118(){
+  const out=document.getElementById('reverseResultV118');
+  const raw=document.getElementById('reversePriceV118').value;
+  const price=Number(raw);
+  const currency=document.getElementById('reverseCurrencyV118').value;
+  if(!raw.trim()||!Number.isFinite(price)||price<=0){out.textContent='请输入有效的直播售价。';return;}
+  // Actual left-hand 50% 门市/直播 price = floor(totalCost * 2.24 / 100)*100 + 80.
+  // An arbitrary competitor price may not end in 80: approximate with the two
+  // neighboring attainable tags, and show the union of their possible costs.
+  const factor=2*1.12;
+  const k=Math.floor((price-80)/100);
+  const exact=Math.abs(price-(k*100+80))<0.001;
+  const lowerTag=exact?price:Math.max(80,k*100+80);
+  const upperTag=exact?price:Math.max(80,(k+1)*100+80);
+  const low=Math.max(0,(lowerTag-80)/factor);
+  const high=(upperTag+20)/factor;
+  const rate=Number((typeof defaultRates!=='undefined'&&defaultRates[currency])||1);
+  const freightPct=Number.parseFloat((typeof defaultFreight!=='undefined'&&defaultFreight[currency])||'0')||0;
+  const miscPct=Number((typeof defaultLocal!=='undefined'&&defaultLocal[currency])||0);
+  const allFactor=(1+miscPct/100)*(1+freightPct/100);
+  const fmt=n=>'RM '+n.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const originalLow=low*rate/allFactor;
+  const originalHigh=high*rate/allFactor;
+  const fmtOriginal=n=>n.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  // No pot or local shipping assumption: do not silently invent an expense.
+  const assumption=exact?`售价符合尾数80规则。`:`售价不是尾数80，按邻近标价 ${fmt(lowerTag)} 至 ${fmt(upperTag)} 估算。`;
+  out.innerHTML=`<div>估计总成本（RM）：<strong style="color:#a00000">${fmt(low)} – ${fmt(high)}</strong></div>`+
+    `<div>估计原币基础成本：<strong>${fmtOriginal(originalLow)} – ${fmtOriginal(originalHigh)} ${currency}</strong></div>`+
+    `<div class="reverse-note">${assumption} 汇率 ${rate}、内地杂费 ${miscPct}%、海外运费 ${freightPct}%（按默认设置）。未计花盆、苔藓、本地运费及佣金；总成本为含上述比例费用的估计，原币基础成本不含盆。因缺少盆费等资料，不能单独给出准确的含盆成本。</div>`;
+}
+(function initReverseLiveV118(){
+  const price=document.getElementById('reversePriceV118');
+  const currency=document.getElementById('reverseCurrencyV118');
+  if(price)price.addEventListener('input',updateReverseLiveV118);
+  if(currency)currency.addEventListener('change',updateReverseLiveV118);
+})();
+
 document.addEventListener('keydown', function(e) {
   const modal = document.getElementById('calcModal');
   const d = document.getElementById('calcDisplay');
